@@ -1,0 +1,15 @@
+tasks:
+  - name: UCI Server
+    init: sh ./install.sh
+
+ports:
+  - port: 18080 # Kafka UI
+    onOpen: ignore
+  - port: 15003 # UCI API Hausra
+    onOpen: ignore
+  - port: 8080 # ODK
+    onOpen: ignore
+    visibility: public
+  - port: 9011 # Fusionauth
+    onOpen: ignore
+    visibility: public

@@ -1,0 +1,9 @@
+*
+!.gitignore
+!.env
+!docker-compose.yml
+!install.sh
+!*.md
+!.gitpod.yml
+!etc/*
+!etc

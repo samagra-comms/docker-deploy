@@ -1,0 +1,447 @@
+version: "3"
+
+networks:   
+  cassandra:     
+    driver: bridge
+
+services:
+# UCI API
+
+  uci-api-service:
+    build: ./uci-apis/
+    image: federation-service
+    networks:
+      - cassandra
+    container_name: federation-service
+    restart: unless-stopped
+    env_file: .env
+    command:
+        - /bin/bash
+        - -c
+        - |
+          curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+          cd migrations/uci-core/
+          pwd
+          hasura migrate apply --endpoint http://uci-api-db-gql:8080
+          echo "Server Started"
+          cd ../../
+          pm2-runtime app.js
+    ports:
+      - 9999:9999
+  
+  uci-api-db:
+    container_name: uci-api-db
+    image: postgres:12
+    networks:
+      - cassandra
+    env_file: .env
+    environment:
+      - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
+      - POSTGRES_USER=${UCI_API_POSTGRES_USER}
+      - POSTGRES_DB=${UCI_API_POSTGRES_DB}
+    ports:
+      - "5437:5432"
+    volumes:
+      - pgdata-uci-api-db:/var/lib/postgresql/data
+
+  uci-api-db-gql:
+    container_name: uci-api-db-gql
+    image: hasura/graphql-engine:v2.0.0-alpha.1
+    networks:
+      - cassandra
+    env_file: .env
+    ports:
+      - "15003:8080"
+    depends_on:
+      - uci-api-db
+    restart: always
+
+  uci-api-scheduler-db:
+    container_name: uci-api-scheduler-db
+    image: redis:latest
+    networks:
+      - cassandra
+    env_file: .env
+    ports:
+      - "6399:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    hostname: redis
+    volumes:
+      - ./uci-api-scheduler-db:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+
+# UCI PWA Adapter
+
+  uci-transport-socket:
+    image: samagragovernance/uci-transport-socket:655da87
+    container_name: uci-transport-socket
+    networks:
+      - cassandra
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+      SERVER_PORT: 3005
+      ADAPTER_URL: "http://inbound:8085/pwa/web"
+    ports:
+      - 3005:3005
+
+  cache:
+    container_name: cache
+    image: redis:latest
+    networks:
+      - cassandra
+    ports:
+      - '6388:6379'
+    command: ['redis-server', '--appendonly', 'yes']
+    hostname: redis
+    volumes:
+      - ./redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+
+# Kafka
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    networks:
+      - cassandra
+    ports:
+      - "2181:2181"
+  
+  kafka:
+    container_name: kafka
+    image: wurstmeister/kafka
+    networks:
+      - cassandra
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://dev.uci.samagra.io:9094
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:SASL_PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
+      KAFKA_LOG_DIRS: ./data00/kafka-logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
+      - ./data00/kafka:/kafka
+      - ./kafka-data:/var/lib/kafka:Z
+    links:
+      - zookeeper
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry
+    restart: on-failure
+    networks:
+      - cassandra
+    depends_on:
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:9092'
+      SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8085'
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: 'INFO'
+
+  connect:
+    image: confluentinc/cp-kafka-connect
+    depends_on:
+      - kafka
+      - schema-registry
+    networks:
+      - cassandra
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:9092'
+      CONNECT_REST_PORT: '8083'
+      CONNECT_REST_LISTENERS: 'http://0.0.0.0:8083'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'connect'
+      CONNECT_CONFIG_STORAGE_TOPIC: '__connect-config'
+      CONNECT_OFFSET_STORAGE_TOPIC: '__connect-offsets'
+      CONNECT_STATUS_STORAGE_TOPIC: '__connect-status'
+      CONNECT_GROUP_ID: 'kafka-connect'
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: 'true'
+      CONNECT_KEY_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8085'
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: 'true'
+      CONNECT_VALUE_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8085'
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: ' /usr/share/java/'
+
+  akhq:
+    image: tchiotludo/akhq
+    networks:
+      - cassandra
+    ports:
+     - "18080:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          security:
+            basic-auth:
+              - username: admin
+                password: d49745a74edfd20705ccaa277209db554b6b0d78c20780a4facf87e88aee78c0
+                groups: 
+                  - admin
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:9092"
+              schema-registry:
+                url: "http://schema-registry:8085"
+              connect:
+                - name: "connect"
+                  url: "http://connect:8083"
+
+# UCI Core
+
+  inbound:
+    container_name: inbound
+    image: "samagragovernance/inbound:${CURRENT_VERSION}"
+    restart: always
+    env_file: .env
+    networks:
+      - cassandra
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${INBOUND_INTERNAL_PORT}"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
+
+  orchestrator:
+    container_name: orchestrator
+    image: "samagragovernance/orchestrator:${CURRENT_VERSION}"
+    restart: always
+    networks:
+      - cassandra
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${ORCHESTRATOR_INTERNAL_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
+
+  transformer:
+    container_name: transformer
+    image: "samagragovernance/transformer:${CURRENT_VERSION}"
+    restart: always
+    env_file: .env
+    networks:
+      - cassandra
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${TRANSFORMER_INTERNAL_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
+
+  outbound:
+    container_name: outbound
+    image: "samagragovernance/outbound:${CURRENT_VERSION}"
+    restart: always
+    env_file: .env
+    networks:
+      - cassandra
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${OUTBOUND_INTERNAL_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
+
+  cass:
+    image: cassandra:latest
+    container_name: cass
+    hostname: cass
+    networks:
+      - cassandra
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 7199:7199
+      - 9041:9042
+      - 9160:9160
+    environment:
+      - MAX_HEAP_SIZE=1000M
+      - HEAP_NEWSIZE=1000M
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0
+    restart: always
+    volumes:
+      - ./out/cd-new:/var/lib/cassandra
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "cqlsh",
+          "-u cassandra",
+          "-p cassandra",
+          "-e describe keyspaces",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: "redis:alpine"
+    networks:
+      - cassandra
+    ports:
+      - "127.0.0.1:6389:6379"
+    volumes:
+      - redis-data:/data   
+  
+  formsdb:
+    container_name: formsdb
+    image: postgres:9.6
+    networks:
+      - cassandra
+    environment:
+      POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
+      POSTGRES_USER: ${FORMS_DB_USERNAME}
+      POSTGRES_DB: ${FORMS_DB_NAME}
+    ports:
+      - "0.0.0.0:5435:5432"
+    volumes:
+      - db-data-formsdb:/var/lib/postgresql/data
+
+  graphql-formsdb:
+    image: hasura/graphql-engine:latest
+    networks:
+      - cassandra
+    ports:
+      - "15002:8080"
+    depends_on:
+      - formsdb
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:yoursupersecret@formsdb:5432/formsdb
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: 2OWslm5aAjlTARU
+
+# ODK      
+  aggregate-db:
+    container_name: aggregate-db
+    image: postgres:9.6-alpine
+    networks:
+      - cassandra
+    ports:
+      - 5431:5432
+    environment:
+      - POSTGRES_PASSWORD=${ODK_POSTGRES_PASSWORD}
+      - POSTGRES_USER=${ODK_POSTGRES_USER}
+      - POSTGRES_DB=${ODK_POSTGRES_DB}
+    volumes:
+      - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
+      - ./pgdata-odk:/var/lib/postgresql/data
+
+  wait_for_db:
+    image: dadarek/wait-for-dependencies
+    networks:
+      - cassandra
+    depends_on:
+      - aggregate-db
+    command: aggregate-db:5432
+
+  aggregate-server:
+    container_name: aggregate-server
+    networks:
+      - cassandra
+    depends_on:
+      - wait_for_db
+    image: tomcat:alpine
+    environment:
+      - DB_USERNAME=${ODK_POSTGRES_USER}
+      - DB_SCHEMA=public
+      - DB_PASSWORD=${ODK_POSTGRES_PASSWORD}
+      - DB_NAME=${ODK_POSTGRES_DB}
+      - DB_PORT=5432
+      - AGGREGATE_HOST=
+      - DB_URL=jdbc:postgresql://aggregate-db:5432/${ODK_POSTGRES_DB}?user=${ODK_POSTGRES_USER}&password=${ODK_POSTGRES_PASSWORD}
+    ports:
+      - 8080:8080
+    volumes:
+      - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
+
+# Fusion Auth
+
+  fa-search:
+    container_name: fa-search
+    networks:
+      - cassandra
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    environment:
+      - cluster.name=fusionauth
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
+      - discovery.type=single-node
+    restart: unless-stopped
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - fa-es-data:/usr/share/elasticsearch/data
+
+  fusionauth:
+    container_name: fusionauth
+    networks:
+      - cassandra
+    image: fusionauth/fusionauth-app:latest
+    depends_on:
+      - fa-search
+    environment:
+      DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
+      DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
+      DATABASE_ROOT_PASSWORD: ${FUSIONAUTH_POSTGRES_PASSWORD}
+      DATABASE_USERNAME: ${FUSIONAUTH_DATABASE_USER}
+      DATABASE_PASSWORD: ${FUSIONAUTH_DATABASE_USERNAME}
+      FUSIONAUTH_SEARCH_ENGINE_TYPE: elasticsearch
+      FUSIONAUTH_SEARCH_SERVERS: http://fa-search:9200
+      FUSIONAUTH_URL: http://fusionauth:9011
+      FUSIONAUTH_API_KEY: ${FUSIONAUTH_API_KEY}
+      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
+      FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
+      FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
+    restart: unless-stopped
+    ports:
+      - 9011:9011
+    volumes:
+      - fa-config:/usr/local/fusionauth/config
+      - ./kickstart:/usr/local/fusionauth/kickstart
+
+  fa-db:
+    container_name: fa-db
+    networks:
+      - cassandra
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=${FUSIONAUTH_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
+    ports:
+      - "5436:${FUSIONAUTH_POSTGRES_PORT}"
+    volumes:
+      - ./pgdata-fa-db:/var/lib/postgresql/data
+
+volumes:
+  db-data-formsdb:
+  db-data-messagedb:
+  kafka-data:
+  redis-data:
+  license.json:
+  fa-es-data:
+  fa-config:
+  pgdata-uci-api-db:
