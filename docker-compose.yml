@@ -389,10 +389,10 @@ services:
       - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
       - discovery.type=single-node
     restart: unless-stopped
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+    # ulimits: # Don't work with Gitpod
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
     volumes:
       - fa-es-data:/usr/share/elasticsearch/data
 

@@ -1,6 +1,6 @@
 tasks:
   - name: UCI Server
-    init: sh ./install.sh
+    init: bash ./install.sh
 
 ports:
   - port: 18080 # Kafka UI
