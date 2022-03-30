@@ -7,3 +7,4 @@
 !.gitpod.yml
 !etc/*
 !etc
+!kickstart/
