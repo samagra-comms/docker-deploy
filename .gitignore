@@ -3,7 +3,6 @@
 !.env
 !docker-compose.yml
 !install.sh
-!installv2.sh
 !*.md
 !.gitpod.yml
 !etc/*
