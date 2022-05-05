@@ -262,6 +262,21 @@ services:
     ports:
       - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
 
+  broadcast-transformer:
+    container_name: broadcast-transformer
+    image: "samagragovernance/broadcast-transformer:${CURRENT_VERSION}"
+    restart: always
+    env_file: .env
+    networks:
+      - cassandra
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "${BROADCAST_TRANSFORMER_INTERNAL_PORT}:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"
+
   cass:
     image: cassandra:latest
     container_name: cass
