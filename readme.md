@@ -257,6 +257,8 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
     }
     ```
 
+**Note**: If you want to use the gupshup adapter, please contact the administrator for credentials.
+
 ## Start using bot
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
 
