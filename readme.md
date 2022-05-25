@@ -36,7 +36,7 @@ Any user/ organization that wants to use setup UCI on their own server.
     
     ```cd docker-deploy```
 
-3. Contact the administrator for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
 
 4. Run below command to download & start the services using docker.
 
@@ -257,12 +257,15 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
     }
     ```
 
-**Note**: If you want to use the gupshup adapter, please contact the administrator for credentials.
+**Note**: If you want to use the gupshup adapter, please contact the [administrator](#contact-administrator) for credentials.
 
 ## Start using bot
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
 
 ![](media/Test-Bot-Flow-Whatsapp.jpeg)
+
+## Contact Administrator:
+Please write to the Maintainer - **Chakshu (chakshu@samagragovernance.in)**, and cc - **Saket (saket@samagragovernance.in)**, **Sukhpreet (sukhpreet@samagragovernance.in)**
 
 ### TODO
 1. DB for UCI APIs doesn't get auto populated for the default ODK transformers.
