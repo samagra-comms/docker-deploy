@@ -11,13 +11,20 @@ All the adopters of UCI who want to set up an instance of UCI for usage.
 ## Pre-requisites for setting up UCI
 1. Install Docker if not already installed. [Click Here](https://docs.docker.com/engine/install/ubuntu/)
 
-2. Should have decent knowledge of: 
-    1. Terminal & its commands
-    2. Docker
-    3. Server
-    4. Rest apis
+2. Infraa:
+    * 8 CPU Cores
+    * 16 GB RAM
+    * 20 GB Storage
+    * Server Fixed/Static IP
+    * Preffered OS - Linux
 
-3. Please make sure any of the ports mentioned used in the [file](docker-compose.yml) is not being used via any service on server.
+3. Should have decent knowledge of: 
+    * Terminal & its commands
+    * Docker
+    * Server
+    * Rest apis
+
+4. Please make sure all of the ports mentioned used in the [file](docker-compose.yml) are open & are not being used by any other service on server.
 
 
 ## Steps to follow 
@@ -25,20 +32,32 @@ All the adopters of UCI who want to set up an instance of UCI for usage.
 
     ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
 
-2. Contact the administrator for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+2. Go to folder
+    
+    ```cd docker-deploy```
 
-3. Run below command to download & start the services using docker.
+3. Contact the administrator for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+
+4. Run below command to download & start the services using docker.
 
     ```bash install.sh```
+
+5. This will download all the service images & start the services.
+
+6. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
+    * Stop all services:
+    
+        ```docker-compose -f docker-compose.yml down```
+
+    * Start all services:
+    
+        ```docker-compose -f docker-compose.yml up -d```
 
 **Note**: If you are just here to try the setup please click on the button below.
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy)
 
 **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
-
-## Common Errors and resolution
-1. 
 
 ## After a successful setup completion
 1. Script execution time - **Around 2 hours**
@@ -53,6 +72,19 @@ All the adopters of UCI who want to set up an instance of UCI for usage.
     * Bot DB Hasura UI: http://localhost:15003/console/login
     * Fusion Auth: http://localhost:9011
     * ODK: http://localhost:8080/Aggregate.html#management/forms
+
+3. If you want to check the all services logs, Use below command
+    
+    ```docker-compose -f docker-compose.yml --follow --tail 10```
+
+4. If you want to check logs for a specific service, follow below flow.
+    * Check service container id: 
+        
+        ```docker ps -a```
+    
+    * Copy the container id from the list for the service you want to see the logs for, and use it in below command.
+        
+        ```docker --follow --tail 10 container_id```
 
 **Note**: If the services are updated on any server, use server's ip instead of localhost. Eg. http://143.112.x.x:9080
 
@@ -237,3 +269,4 @@ Once the bot is created, we can start using it. If you have set up gupshup/netco
 4. Add benchmarking.
 5. Add Gitpod.
 6. Add CI to verify setup.
+7. Add UCI PWA & Admin Console in this script.
