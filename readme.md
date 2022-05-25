@@ -2,32 +2,32 @@
 Docker-deploy as the name suggests is a docker-based deployment script that can be used to set up the UCI for usage.
 
 
-### What is Docker? Why Docker?
-Docker, is a software framework for building, running, and managing services on servers and the cloud. The term "docker" may refer to either the tools (the commands and a daemon) or to the Dockerfile file format. Its a lightweight virtual environment that provides us a system to run our services using minimum required resources.
+### Why Docker?
+We are using Docker to enable a smooth, single command experience for all the adopters of UCI to get it up and running. Docker is an open-source containerization platform. It enables developers to package applications into containers—standardized executable components combining application source code with the operating system (OS) libraries and dependencies required to run that code in any environment.
 
-## Intended users of this repo
-All the adopters of UCI who want to set up an instance of UCI for usage.
+## Intended users
+Any user/ organization that wants to use setup UCI on their own server.
 
 ## Pre-requisites for setting up UCI
 1. Install Docker if not already installed. [Click Here](https://docs.docker.com/engine/install/ubuntu/)
 
-2. Infraa:
+2. Infra:
     * 8 CPU Cores
     * 16 GB RAM
     * 20 GB Storage
     * Server Fixed/Static IP
     * Preffered OS - Linux
 
-3. Should have decent knowledge of: 
+3. Basic familiarity required with: 
     * Terminal & its commands
     * Docker
     * Server
     * Rest apis
 
-4. Please make sure all of the ports mentioned used in the [file](docker-compose.yml) are open & are not being used by any other service on server.
+4. Please make sure all of the ports mentioned used in the [file](docs/ports.md) are open & are not being used by any other service on server.
 
 
-## Steps to follow 
+## Setup Steps 
 1. Take clone of this repository. 
 
     ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
@@ -36,7 +36,7 @@ All the adopters of UCI who want to set up an instance of UCI for usage.
     
     ```cd docker-deploy```
 
-3. Contact the administrator for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
 
 4. Run below command to download & start the services using docker.
 
@@ -257,12 +257,15 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
     }
     ```
 
-**Note**: If you want to use the gupshup adapter, please contact the administrator for credentials.
+**Note**: If you want to use the gupshup adapter, please contact the [administrator](#contact-administrator) for credentials.
 
 ## Start using bot
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
 
 ![](media/Test-Bot-Flow-Whatsapp.jpeg)
+
+## Contact Administrator:
+Please write to the Maintainer - **Chakshu (chakshu@samagragovernance.in)**, and cc - **Saket (saket@samagragovernance.in)**, **Sukhpreet (sukhpreet@samagragovernance.in)**
 
 ### TODO
 1. DB for UCI APIs doesn't get auto populated for the default ODK transformers.

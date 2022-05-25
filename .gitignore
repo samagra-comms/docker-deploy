@@ -11,3 +11,5 @@
 !kickstart/
 !media
 !media/*
+!docs
+!docs/*
