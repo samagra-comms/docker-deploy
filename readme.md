@@ -33,7 +33,7 @@ All the adopters of UCI who want to set up an instance of UCI for usage.
 
 **Note**: If you are just here to try the setup please click on the button below.
 
-    [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy)
 
 **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
@@ -108,7 +108,24 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
 
     [Sample ODK XML Form](List-QRB-Test-Bot.xml)
 
-    The api will return a form id, use this form id in create conversation api.
+    **Response**: The api will return a form id, use this form id in create conversation logic api. Form id Eg. **List-Button-test-v1**
+
+    ```
+    {
+        "ts": "2022-05-24T13:46:06.640Z",
+        "params": {
+            "resmsgid": "dc586de0-db67-11ec-ae84-fbd67a9c1174",
+            "msgid": null,
+            "status": "successful",
+            "err": null,
+            "errmsg": null
+        },
+        "responseCode": "OK",
+        "result": {
+            "data": "List-Button-test-v1"
+        }
+    }    
+    ```
 
 3. Create a Conversation Logic
 
@@ -133,7 +150,29 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
     }'
     ```
 
-    It will return a conversation logic id, use it in create bot api.
+    **Response**: It will return a conversation logic id, use it in create bot api. Eg. **92f7b965-4118-4ddc-9c7d-0bc0f77092db**
+
+    ```
+    {
+        "ts": "2022-05-24T13:48:06.407Z",
+        "params": {
+            "resmsgid": "23b94970-db68-11ec-ae84-fbd67a9c1174",
+            "msgid": null,
+            "status": "successful",
+            "err": null,
+            "errmsg": null
+        },
+        "responseCode": "OK",
+        "result": {
+            "data": {
+                "transformers": "[{"id":"bbf56981-b8c9-40e9-8067-468c2c753659","meta":{"form":"https://hosted.my.form.here.com/%22,/%22formID/%22:/%22List-Button-test-v1/%22%7D%7D]",
+                "adapter": "44a9df72-3d7a-4ece-94c5-98cf26307323",
+                "name": "UCI demo bot logic",
+                "id": "92f7b965-4118-4ddc-9c7d-0bc0f77092db"
+            }
+        }
+    }
+    ```
 
 4. Create a bot
 
@@ -156,8 +195,40 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
     }'
     ```
 
+    **Response**: This api will return a bot id & other bot information. Use the starting message (Eg. **Hi Test Bot**) from here to start conversation with a bot.
+
+    ```
+    {
+        "ts": "2022-05-24T13:49:15.292Z",
+        "params": {
+            "resmsgid": "4cc874d0-db68-11ec-ae84-fbd67a9c1174",
+            "msgid": null,
+            "status": "successful",
+            "err": null,
+            "errmsg": null
+        },
+        "responseCode": "OK",
+        "result": {
+            "data": {
+                "startingMessage": "Hi Test Bot",
+                "name": "Test Bot",
+                "users": [],
+                "status": "enabled",
+                "startDate": "2022-05-24",
+                "endDate": "2023-05-24",
+                "logicIDs": [
+                    "92f7b965-4118-4ddc-9c7d-0bc0f77092db"
+                ],
+                "id": "9f0b1401-44d2-46be-83bd-7cbd5014f899"
+            }
+        }
+    }
+    ```
+
 ## Start using bot
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
+
+![](media/Test-Bot-Flow-Whatsapp.jpeg)
 
 ### TODO
 1. DB for UCI APIs doesn't get auto populated for the default ODK transformers.
