@@ -9,3 +9,5 @@
 !etc/*
 !etc
 !kickstart/
+!media
+!media/*
