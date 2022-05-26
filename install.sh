@@ -4,14 +4,26 @@
 curl -fsSL https://get.docker.com -o get-docker.sh
 # DRY_RUN=1 sh ./get-docker.sh
 
+#Loader 
+BAR='############################################################'   # this is full bar, e.g. 60 
+
+loader(){
+sleep_time=$(($1/60))
+for i in $(eval echo {1..$1}); do
+    echo -ne "\r${BAR:0:$i}" # print $i chars of $BAR from 0 position
+    sleep $(($sleep_time))                 # wait 100ms between "frames"
+done
+echo ""
+}
+
 # Clone repo for ODK
-# if [[ ! -e odk-aggregate ]]; then
-#     mkdir odk-aggregate
-# fi
-# cd odk-aggregate
-# git clone -b release-4.4.0  https://github.com/samagra-comms/odk.git
-# cd ..
-# git clone -b release-4.7.0 https://github.com/samagra-comms/uci-apis.git
+if [[ ! -e odk-aggregate ]]; then
+    mkdir odk-aggregate
+fi
+cd odk-aggregate
+git clone -b release-4.4.0  https://github.com/samagra-comms/odk.git
+cd ..
+git clone -b release-4.7.0 https://github.com/samagra-comms/uci-apis.git
 
 # UCI Web Channel
 git clone https://github.com/samagra-comms/uci-web-channel.git
@@ -24,20 +36,43 @@ cd ..
 
 
 # UCI Admin
-# git clone https://github.com/samagra-comms/uci-admin
-# cd uci-admin
-# uciAdminBaseURL="url: 'http://localhost:9999',"
-# sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
-# npm install -g @angular/cli
-# npm i
-# ng build --prod
-# cd ..
+git clone https://github.com/samagra-comms/uci-admin
+cd uci-admin
+uciAdminBaseURL="url: 'http://localhost:9999',"
+sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
+npm install -g @angular/cli
+npm i
+ng build --prod
+cd ..
 
-# docker-compose up -d fa-search fusionauth fa-db
-# sleep 60s
-# docker-compose up -d cass kafka schema-registry zookeeper connect akhq
-# sleep 120s
-# docker-compose up -d aggregate-db wait_for_db aggregate-server
-# sleep 60s
+docker-compose up -d fa-search fusionauth fa-db
+# Sleep for 60s
+loader 60
+docker-compose up -d cass kafka schema-registry zookeeper connect akhq
+# Sleep for 240s
+loader 60
+loader 60
+docker-compose up -d aggregate-db wait_for_db aggregate-server
+# Sleep for 60s
+loader 60
 
-# docker-compose up -d
+docker-compose up -d uci-api-service uci-api-db uci-api-db-gql uci-api-scheduler-db
+# Sleep for 60s
+loader 60
+docker-compose up -d uci-transport-socket uci-pwa uci-admin cache redis formsdb graphql-formsdb
+# Sleep for 240s
+loader 60
+loader 60
+loader 60
+loader 60
+docker-compose up -d inbound orchestrator transformer outbound broadcast-transformer cdac
+# Sleep for 240s
+loader 60
+loader 60
+loader 60
+loader 60
+docker restart transformer
+# Sleep for 120s
+loader 60
+loader 60
+echo "All Services are up"

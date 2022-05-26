@@ -42,9 +42,11 @@ Any user/ organization that wants to use setup UCI on their own server.
 
     ```bash install.sh```
 
-5. This will download all the service images & start the services.
+5. If asked **Would you like to share anonymous usage data about this project with the Angular Team at Google under Google’s Privacy Policy at https://policies.google.com/privacy? For more details and how to change this setting, see http://angular.io/analytics.**, Press **y**.
 
-6. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
+6. This script will download all the service images & start the services.
+
+7. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
     * Stop all services:
     
         ```docker-compose -f docker-compose.yml down```
@@ -72,6 +74,8 @@ Any user/ organization that wants to use setup UCI on their own server.
     * Bot DB Hasura UI: http://localhost:15003/console/login
     * Fusion Auth: http://localhost:9011
     * ODK: http://localhost:8080/Aggregate.html#management/forms
+    * Chat Frontend: http://localhost:9098
+    * Admin Console: http://localhost:9097
 
 3. If you want to check the all services logs, Use below command
     
