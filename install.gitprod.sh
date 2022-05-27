@@ -39,10 +39,11 @@ cd ..
 
 # UCI Admin
 git clone https://github.com/samagra-comms/uci-admin
+cp .env-uci-admin uci-admin/.env
 cd uci-admin
 uciAdminBaseURL=${GITPOD_WORKSPACE_URL:-default_value}
-uciAdminBaseURL="url: 'https://9999-${uciAdminBaseURL:8}',"
-sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
+uciAdminBaseURL="NG_APP_url='https://9999-${uciAdminBaseURL:8}'"
+sed -i "3s|^.*$|$uciAdminBaseURL|" .env
 npm install -g @angular/cli
 npm i
 ng build --prod
