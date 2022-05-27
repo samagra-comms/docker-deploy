@@ -29,14 +29,19 @@ git clone -b release-4.7.0 https://github.com/samagra-comms/uci-apis.git
 git clone https://github.com/samagra-comms/uci-web-channel.git
 cp .env-uci-web-channel uci-web-channel/.env
 cd uci-web-channel
+uciWebChannelBaseURL=${GITPOD_WORKSPACE_URL:-default_value}
+uciWebChannelBaseURL="REACT_APP_TRANSPORT_SOCKET_URL=wss://3005-${uciWebChannelBaseURL:8}"
+sed -i "3s|^.*$|$uciWebChannelBaseURL|" .env
 yarn install
 yarn build
 cd ..
 
+
 # UCI Admin
 git clone https://github.com/samagra-comms/uci-admin
 cd uci-admin
-uciAdminBaseURL="url: 'http://localhost:9999',"
+uciAdminBaseURL=${GITPOD_WORKSPACE_URL:-default_value}
+uciAdminBaseURL="url: 'https://9999-${uciAdminBaseURL:8}',"
 sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
 npm install -g @angular/cli
 npm i
@@ -57,7 +62,7 @@ loader 60
 docker-compose up -d uci-api-service uci-api-db uci-api-db-gql uci-api-scheduler-db
 # Sleep for 60s
 loader 60
-docker-compose up -d uci-transport-socket uci-web-channel uci-admin cache redis formsdb graphql-formsdb
+docker-compose up -d uci-transport-socket uci-pwa uci-admin cache redis formsdb graphql-formsdb
 # Sleep for 240s
 loader 60
 loader 60

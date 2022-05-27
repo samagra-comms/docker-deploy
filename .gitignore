@@ -15,4 +15,6 @@
 !docs/*
 !nginx.conf
 !uci-admin.conf
-!uci-pwa.conf
+!uci-web-channel.conf
+!.env-uci-web-channel
+!install.gitprod.sh
