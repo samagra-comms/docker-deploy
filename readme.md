@@ -27,6 +27,28 @@ Any user/ organization that wants to use setup UCI on their own server.
 4. Please make sure all of the ports mentioned used in the [file](docs/ports.md) are open & are not being used by any other service on server.
 
 
+## Common Errors and resolution
+1. On Sending the starting message to [UCI front](http://localhost:9098/) , if you do not receive any reply in 1 minute. Follow below steps
+    * Check the logs of inbound service using below command
+        * Check the container id
+
+            ```docker ps -a```
+        * Check the logs for orchestrator container
+
+            ```docker logs --follow --tail 100 container_id```
+        * If log shows pushed to inbound-processed topic, then follow the same flow for orchestrator, transformer or outbound 
+    *  One of the service must not be receiving data from topic, restart that service using below commands
+        * Check the container id
+
+            ```docker ps -a```
+        * Stop the service
+
+            ```docker stop container_id```
+
+        * Start the service
+
+            ```docker-compose up -d service_name```
+
 ## Setup Steps 
 1. Take clone of this repository. 
 
@@ -42,9 +64,11 @@ Any user/ organization that wants to use setup UCI on their own server.
 
     ```bash install.sh```
 
-5. This will download all the service images & start the services.
+5. If asked **Would you like to share anonymous usage data about this project with the Angular Team at Google under Google’s Privacy Policy at https://policies.google.com/privacy? For more details and how to change this setting, see http://angular.io/analytics.**, Press **y**.
 
-6. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
+6. This script will download all the service images & start the services.
+
+7. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
     * Stop all services:
     
         ```docker-compose -f docker-compose.yml down```
@@ -55,7 +79,7 @@ Any user/ organization that wants to use setup UCI on their own server.
 
 **Note**: If you are just here to try the setup please click on the button below.
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/install.gitprod.sh)
 
 **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
@@ -72,6 +96,8 @@ Any user/ organization that wants to use setup UCI on their own server.
     * Bot DB Hasura UI: http://localhost:15003/console/login
     * Fusion Auth: http://localhost:9011
     * ODK: http://localhost:8080/Aggregate.html#management/forms
+    * Chat Frontend: http://localhost:9098
+    * Admin Console: http://localhost:9097
 
 3. If you want to check the all services logs, Use below command
     
@@ -127,137 +153,147 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
 8. For managing all the assesment data go on URL : http://localhost:15002/ and track all the tables and relation using [token](https://github.com/samagra-comms/docker-deploy/blob/main/docker-compose.yml#L363).
 
 ## Setting up your first bot
-1. Convert a ODK Excel form to XML form using [Link](https://getodk.org/xlsform/).
+1. UCI Admin 
+    1. Go to [Link](http://localhost:9097/uci-admin)
+    2. Click on Add new button
+    3. Fill the form with a unique starting message, start date equals to current & end date more than current date.
+    4. Click on next button 
+    5. Click on Add logic button
+    6. Fill the form & upload a xml form. Eg. [Sample ODK Excel Form](media/List-QRB-Test-Bot.xlsx)
+    7. Add this & submit this form.
+    8. The bot will be added and we can start using this on [UCI front](http://localhost:9098).
+2. APIs
+    1. Convert a ODK Excel form to XML form using [Link](https://getodk.org/xlsform/).
 
-    [Sample ODK Excel Form](media/List-QRB-Test-Bot.xlsx)
+        [Sample ODK Excel Form](media/List-QRB-Test-Bot.xlsx)
 
-2. Upload this XML from using this api.
-    ```
-    curl --location --request POST 'http://localhost:9999/admin/v1/forms/upload' \
-    --header 'admin-token: EXnYOvDx4KFqcQkdXqI38MHgFvnJcxMS' \
-    --form 'form=@"{PATH_OF_ODK_FORM}"'
-    ```
+    2. Upload this XML from using this api.
+        ```
+        curl --location --request POST 'http://localhost:9999/admin/v1/forms/upload' \
+        --header 'admin-token: EXnYOvDx4KFqcQkdXqI38MHgFvnJcxMS' \
+        --form 'form=@"{PATH_OF_ODK_FORM}"'
+        ```
 
-    [Sample ODK XML Form](List-QRB-Test-Bot.xml)
+        [Sample ODK XML Form](List-QRB-Test-Bot.xml)
 
-    **Response**: The api will return a form id, use this form id in create conversation logic api. Form id Eg. **List-Button-test-v1**
+        **Response**: The api will return a form id, use this form id in create conversation logic api. Form id Eg. **List-Button-test-v1**
 
-    ```
-    {
-        "ts": "2022-05-24T13:46:06.640Z",
-        "params": {
-            "resmsgid": "dc586de0-db67-11ec-ae84-fbd67a9c1174",
-            "msgid": null,
-            "status": "successful",
-            "err": null,
-            "errmsg": null
-        },
-        "responseCode": "OK",
-        "result": {
-            "data": "List-Button-test-v1"
-        }
-    }    
-    ```
+        ```
+        {
+            "ts": "2022-05-24T13:46:06.640Z",
+            "params": {
+                "resmsgid": "dc586de0-db67-11ec-ae84-fbd67a9c1174",
+                "msgid": null,
+                "status": "successful",
+                "err": null,
+                "errmsg": null
+            },
+            "responseCode": "OK",
+            "result": {
+                "data": "List-Button-test-v1"
+            }
+        }    
+        ```
 
-3. Create a Conversation Logic
+    3. Create a Conversation Logic
 
-    ```
-     curl --location --request POST 'http://localhost:9999/admin/v1/conversationLogic/create' \
-    --header 'admin-token: EXnYOvDx4KFqcQkdXqI38MHgFvnJcxMS' \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-        "data": {
-            "name": "UCI demo bot logic",
-            "transformers": [
-                {
-                    "id": "bbf56981-b8c9-40e9-8067-468c2c753659",
-                    "meta": {
-                        "form": "https://hosted.my.form.here.com",
-                        "formID": "List-Button-test-v1"
-                    }
-                }
-            ],
-            "adapter": "44a9df72-3d7a-4ece-94c5-98cf26307323"
-        }
-    }'
-    ```
-
-    **Response**: It will return a conversation logic id, use it in create bot api. Eg. **92f7b965-4118-4ddc-9c7d-0bc0f77092db**
-
-    ```
-    {
-        "ts": "2022-05-24T13:48:06.407Z",
-        "params": {
-            "resmsgid": "23b94970-db68-11ec-ae84-fbd67a9c1174",
-            "msgid": null,
-            "status": "successful",
-            "err": null,
-            "errmsg": null
-        },
-        "responseCode": "OK",
-        "result": {
+        ```
+        curl --location --request POST 'http://localhost:9999/admin/v1/conversationLogic/create' \
+        --header 'admin-token: EXnYOvDx4KFqcQkdXqI38MHgFvnJcxMS' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
             "data": {
-                "transformers": "[{"id":"bbf56981-b8c9-40e9-8067-468c2c753659","meta":{"form":"https://hosted.my.form.here.com/%22,/%22formID/%22:/%22List-Button-test-v1/%22%7D%7D]",
-                "adapter": "44a9df72-3d7a-4ece-94c5-98cf26307323",
                 "name": "UCI demo bot logic",
-                "id": "92f7b965-4118-4ddc-9c7d-0bc0f77092db"
+                "transformers": [
+                    {
+                        "id": "bbf56981-b8c9-40e9-8067-468c2c753659",
+                        "meta": {
+                            "form": "https://hosted.my.form.here.com",
+                            "formID": "List-Button-test-v1"
+                        }
+                    }
+                ],
+                "adapter": "44a9df72-3d7a-4ece-94c5-98cf26307323"
+            }
+        }'
+        ```
+
+        **Response**: It will return a conversation logic id, use it in create bot api. Eg. **92f7b965-4118-4ddc-9c7d-0bc0f77092db**
+
+        ```
+        {
+            "ts": "2022-05-24T13:48:06.407Z",
+            "params": {
+                "resmsgid": "23b94970-db68-11ec-ae84-fbd67a9c1174",
+                "msgid": null,
+                "status": "successful",
+                "err": null,
+                "errmsg": null
+            },
+            "responseCode": "OK",
+            "result": {
+                "data": {
+                    "transformers": "[{"id":"bbf56981-b8c9-40e9-8067-468c2c753659","meta":{"form":"https://hosted.my.form.here.com/%22,/%22formID/%22:/%22List-Button-test-v1/%22%7D%7D]",
+                    "adapter": "44a9df72-3d7a-4ece-94c5-98cf26307323",
+                    "name": "UCI demo bot logic",
+                    "id": "92f7b965-4118-4ddc-9c7d-0bc0f77092db"
+                }
             }
         }
-    }
-    ```
+        ```
 
-4. Create a bot
+    4. Create a bot
 
-    ```
-    curl --location --request POST 'http://localhost:9999/admin/v1/bot/create' \
-    --header 'admin-token: EXnYOvDx4KFqcQkdXqI38MHgFvnJcxMS' \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-        "data": {
-            "startingMessage": "Hi Test Bot",
-            "name": "Test Bot",
-            "users": [],
-            "logic": [
-                "c556dfc8-5dd3-477c-83bb-65d234c4d223" // Get this id from Create a conversation logic api.
-            ],
-            "status": "enabled",
-            "startDate": "2022-05-24",
-            "endDate": "2023-05-24"
-        }
-    }'
-    ```
-
-    **Response**: This api will return a bot id & other bot information. Use the starting message (Eg. **Hi Test Bot**) from here to start conversation with a bot.
-
-    ```
-    {
-        "ts": "2022-05-24T13:49:15.292Z",
-        "params": {
-            "resmsgid": "4cc874d0-db68-11ec-ae84-fbd67a9c1174",
-            "msgid": null,
-            "status": "successful",
-            "err": null,
-            "errmsg": null
-        },
-        "responseCode": "OK",
-        "result": {
+        ```
+        curl --location --request POST 'http://localhost:9999/admin/v1/bot/create' \
+        --header 'admin-token: EXnYOvDx4KFqcQkdXqI38MHgFvnJcxMS' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
             "data": {
                 "startingMessage": "Hi Test Bot",
                 "name": "Test Bot",
                 "users": [],
+                "logic": [
+                    "c556dfc8-5dd3-477c-83bb-65d234c4d223" // Get this id from Create a conversation logic api.
+                ],
                 "status": "enabled",
                 "startDate": "2022-05-24",
-                "endDate": "2023-05-24",
-                "logicIDs": [
-                    "92f7b965-4118-4ddc-9c7d-0bc0f77092db"
-                ],
-                "id": "9f0b1401-44d2-46be-83bd-7cbd5014f899"
+                "endDate": "2023-05-24"
+            }
+        }'
+        ```
+
+        **Response**: This api will return a bot id & other bot information. Use the starting message (Eg. **Hi Test Bot**) from here to start conversation with a bot.
+
+        ```
+        {
+            "ts": "2022-05-24T13:49:15.292Z",
+            "params": {
+                "resmsgid": "4cc874d0-db68-11ec-ae84-fbd67a9c1174",
+                "msgid": null,
+                "status": "successful",
+                "err": null,
+                "errmsg": null
+            },
+            "responseCode": "OK",
+            "result": {
+                "data": {
+                    "startingMessage": "Hi Test Bot",
+                    "name": "Test Bot",
+                    "users": [],
+                    "status": "enabled",
+                    "startDate": "2022-05-24",
+                    "endDate": "2023-05-24",
+                    "logicIDs": [
+                        "92f7b965-4118-4ddc-9c7d-0bc0f77092db"
+                    ],
+                    "id": "9f0b1401-44d2-46be-83bd-7cbd5014f899"
+                }
             }
         }
-    }
-    ```
+        ```
 
-**Note**: If you want to use the gupshup adapter, please contact the [administrator](#contact-administrator) for credentials.
+    **Note**: If you want to use the gupshup adapter, please contact the [administrator](#contact-administrator) for credentials.
 
 ## Start using bot
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
