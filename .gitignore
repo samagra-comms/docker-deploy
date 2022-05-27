@@ -13,3 +13,6 @@
 !media/*
 !docs
 !docs/*
+!nginx.conf
+!uci-admin.conf
+!uci-pwa.conf
