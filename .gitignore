@@ -18,3 +18,4 @@
 !uci-web-channel.conf
 !.env-uci-web-channel
 !install.gitprod.sh
+!installv2.gitprod.sh
