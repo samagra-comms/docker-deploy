@@ -56,7 +56,8 @@ loader 60
 # docker-compose up -d uci-api-service uci-api-db uci-api-db-gql uci-api-scheduler-db
 # Sleep for 60s
 loader 60
-docker-compose up -d uci-transport-socket uci-web-channel uci-admin cache redis formsdb graphql-formsdb
+# docker-compose up -d uci-transport-socket uci-web-channel uci-admin cache redis formsdb graphql-formsdb
+docker-compose up -d uci-transport-socket uci-web-channel cache redis formsdb graphql-formsdb
 # Sleep for 240s
 loader 60
 loader 60
