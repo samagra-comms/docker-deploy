@@ -68,17 +68,24 @@ echo "Welcome to the installation script for UCI"
 echo ""
 echo "Let's first start by exporting keys required for installation"
 echo ""
-echo "Please provide the Netcore Whatsapp Auth Token"
+echo "Please provide Encryption Key (If you don't have it please contact to administrator)"
+read ENCRYPTION_KEY
+if [ -z "$ENCRYPTION_KEY" ]; then
+  echo "ENCRYPTION_KEY is empty please contact with administrator"
+  exit 0
+fi
+echo "Please provide the Netcore Whatsapp Auth Token (If you don't have it press enter to continue)"
 read NETCORE_WHATSAPP_AUTH_TOKEN 
-echo "Please provide Netcore Whatsapp Source"
+echo "Please provide Netcore Whatsapp Source (If you don't have it press enter to continue)"
 read NETCORE_WHATSAPP_SOURCE
-echo "Please provide Netcore Whatsapp URI"
+echo "Please provide Netcore Whatsapp URI (If you don't have it press enter to continue)"
 read NETCORE_WHATSAPP_URI
 echo ""
 # export env variables
 sed -i "s|NETCORE_WHATSAPP_AUTH_TOKEN=.*|NETCORE_WHATSAPP_AUTH_TOKEN=${NETCORE_WHATSAPP_AUTH_TOKEN}|g" .env
 sed -i "s|NETCORE_WHATSAPP_SOURCE=.*|NETCORE_WHATSAPP_SOURCE=${NETCORE_WHATSAPP_SOURCE}|g" .env
 sed -i "s|NETCORE_WHATSAPP_URI=.*|NETCORE_WHATSAPP_URI=${NETCORE_WHATSAPP_URI}|g" .env
+sed -i "s|ENCRYPTION_KEY=.*|ENCRYPTION_KEY=${ENCRYPTION_KEY}|g" .env
 
 if [ -x "$(command -v docker)" ]; then
     echo "Docker already available"
@@ -103,19 +110,62 @@ fi
 # Clone repo for ODK
 if [[ ! -e odk-aggregate ]]; then
     mkdir odk-aggregate
+    cd odk-aggregate
+    # echo "Provide release branch name for ODK"
+    # read ODK_BRANCH_NAME
+    echo "Cloning project from git odk"
+    `git clone -b release-4.4.0 https://github.com/samagra-comms/odk.git`
+    cd ..
 fi
-cd odk-aggregate
-echo "Provide release branch name for ODK"
-read ODK_BRANCH_NAME
-echo "Cloning project from git"
-`git clone -b $ODK_BRANCH_NAME https://github.com/samagra-comms/odk.git`
-cd ..
-echo ""
-echo "Provide release branch name for UCI APIs"
-read UCI_BRANCH_NAME
-echo "Cloning project from git"
-`git clone -b $UCI_BRANCH_NAME  https://github.com/samagra-comms/uci-apis.git`
-echo ""
+
+if [[ ! -e  uci-apis ]]; then
+    echo ""
+    # echo "Provide release branch name for UCI APIs"
+    # read UCI_BRANCH_NAME
+    echo "Cloning project from git uci-apis"
+    `git clone -b release-4.7.0  https://github.com/samagra-comms/uci-apis.git`
+    echo ""
+fi
+
+if [[ ! -e uci-web-channel ]]; then
+  # UCI Web Channel
+  git clone https://github.com/samagra-comms/uci-web-channel.git
+  cp .env-uci-web-channel uci-web-channel/.env
+  cd uci-web-channel
+  yarn install
+  yarn build
+  cd ..
+else 
+  cp .env-uci-web-channel uci-web-channel/.env
+  cd uci-web-channel
+  yarn install
+  yarn build
+  cd ..
+fi
+
+# if [[ ! -e uci-admin ]]; then
+#   # UCI Admin
+#   git clone https://github.com/samagra-comms/uci-admin
+#   cp .env-uci-admin uci-admin/.env
+#   cd uci-admin
+#   # uciAdminBaseURL="url: 'http://localhost:9999',"
+#   # sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
+#   npm install -g @angular/cli
+#   npm i
+#   ng build --prod
+#   cd ..
+# else 
+#   if [[ -e .env-uci-admin ]]; then
+#     cp .env-uci-admin uci-admin/.env
+#   fi
+#   cd uci-admin
+#   # uciAdminBaseURL="url: 'http://localhost:9999',"
+#   # sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
+#   npm install -g @angular/cli
+#   npm i
+#   ng build --prod
+#   cd ..
+# fi
 
 # running docker-compose
 docker-compose up -d fa-search fusionauth fa-db
@@ -166,37 +216,37 @@ then
     exit 0
 fi
 
-get_status schema-registry
-if [[ $? != 0 ]]
-then
-    echo ""
-    echo "Error in running container schema-registry"
-    exit 0
-fi
+# get_status schema-registry
+# if [[ $? != 0 ]]
+# then
+#     echo ""
+#     echo "Error in running container schema-registry"
+#     exit 0
+# fi
 
-get_status zookeeper
-if [[ $? != 0 ]]
-then
-    echo ""
-    echo "Error in running container zookeeper"
-    exit 0
-fi
+# get_status zookeeper
+# if [[ $? != 0 ]]
+# then
+#     echo ""
+#     echo "Error in running container zookeeper"
+#     exit 0
+# fi
 
-get_status connect
-if [[ $? != 0 ]]
-then
-    echo ""
-    echo "Error in running container connect"
-    exit 0
-fi
+# get_status connect
+# if [[ $? != 0 ]]
+# then
+#     echo ""
+#     echo "Error in running container connect"
+#     exit 0
+# fi
 
-get_status akhq
-if [[ $? != 0 ]]
-then
-    echo ""
-    echo "Error in running container akhq"
-    exit 0
-fi
+# get_status akhq
+# if [[ $? != 0 ]]
+# then
+#     echo ""
+#     echo "Error in running container akhq"
+#     exit 0
+# fi
 
 docker-compose up -d aggregate-db wait_for_db aggregate-server
 echo "Setting up ODK components, may take few mins"
@@ -210,13 +260,13 @@ then
     exit 0
 fi
 
-get_status wait_for_db
-if [[ $? != 0 ]]
-then
-    echo ""
-    echo "Error in running container wait_for_db"
-    exit 0
-fi
+# get_status wait_for_db
+# if [[ $? != 0 ]]
+# then
+#     echo ""
+#     echo "Error in running container wait_for_db"
+#     exit 0
+# fi
 
 get_status aggregate-server
 if [[ $? != 0 ]]
@@ -230,3 +280,5 @@ echo "Resolving dependencies"
 echo ""
 
 docker-compose up -d
+
+echo "Docker run completed"
