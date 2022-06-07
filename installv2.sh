@@ -127,17 +127,27 @@ if [[ ! -e  uci-apis ]]; then
     echo ""
 fi
 
+SYSTEM_IP=`ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
+
 if [[ ! -e uci-web-channel ]]; then
   # UCI Web Channel
   git clone https://github.com/samagra-comms/uci-web-channel.git
   cp .env-uci-web-channel uci-web-channel/.env
   cd uci-web-channel
+  # Replace transport socker url in env
+  transportSocketURL="REACT_APP_TRANSPORT_SOCKET_URL=ws://$SYSTEM_IP:3005"
+  sed -i "3s|^.*$|$transportSocketURL|" .env
+  cat .env
   yarn install
   yarn build
   cd ..
 else 
   cp .env-uci-web-channel uci-web-channel/.env
   cd uci-web-channel
+  # Replace transport socker url in env
+  transportSocketURL="REACT_APP_TRANSPORT_SOCKET_URL=ws://$SYSTEM_IP:3005"
+  sed -i "3s|^.*$|$transportSocketURL|" .env
+  cat .env
   yarn install
   yarn build
   cd ..
