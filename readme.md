@@ -27,6 +27,32 @@ Any user/ organization that wants to use setup UCI on their own server.
 4. Please make sure all of the ports mentioned used in the [file](docs/ports.md) are open & are not being used by any other service on server.
 
 
+## Setup Steps 
+1. Take clone of this repository. 
+
+    ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
+
+2. Go to folder
+    
+    ```cd docker-deploy```
+
+3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+
+4. Run below command to download & start the services using docker.
+
+    ```bash install.sh```
+
+**Note**: If you are just here to try the setup please click on the button below.
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/install.gitprod.sh)
+
+
+**Script v2**
+
+[![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/pankajjangid05/docker-deploy/installv2.gitprod.sh)
+
+**Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
+
 ## Common Errors and resolution
 1. On Sending the starting message to [UCI front](http://localhost:9098/) , if you do not receive any reply in 1 minute. Follow below steps
     * Check the logs of inbound service using below command
@@ -49,48 +75,15 @@ Any user/ organization that wants to use setup UCI on their own server.
 
             ```docker-compose up -d service_name```
 
-## Setup Steps 
-1. Take clone of this repository. 
-
-    ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
-
-2. Go to folder
-    
-    ```cd docker-deploy```
-
-3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
-
-4. Run below command to download & start the services using docker.
-
-    ```bash install.sh```
-
-5. If asked **Would you like to share anonymous usage data about this project with the Angular Team at Google under Google’s Privacy Policy at https://policies.google.com/privacy? For more details and how to change this setting, see http://angular.io/analytics.**, Press **y**.
-
-6. This script will download all the service images & start the services.
-
-7. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
-    * Stop all services:
-    
-        ```docker-compose -f docker-compose.yml down```
-
-    * Start all services:
-    
-        ```docker-compose -f docker-compose.yml up -d```
-
-**Note**: If you are just here to try the setup please click on the button below.
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/install.gitprod.sh)
-
-**Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
 ## After a successful setup completion
 1. Script execution time - **Around 2 hours**
 2. On a successful run of the script you will get below services:
-    * Inbound Service: http://localhost:9080
-    * Orchestrator Service: http://localhost:8686
-    * Transformer Service: http://localhost:9091
-    * Outbound Service: http://localhost:9090
-    * Broadcast Transformer Service: http://localhost:9093
+    * Inbound Service: http://localhost:9080/health
+    * Orchestrator Service: http://localhost:8686/health
+    * Transformer Service: http://localhost:9091/health
+    * Outbound Service: http://localhost:9090/health
+    * Broadcast Transformer Service: http://localhost:9093/health
     * Campaign Service: http://localhost:9999
     * Kafka UI: http://localhost:18080/ui/docker-kafka-server/topic
     * Bot DB Hasura UI: http://localhost:15003/console/login
@@ -99,11 +92,7 @@ Any user/ organization that wants to use setup UCI on their own server.
     * Chat Frontend: http://localhost:9098
     * Admin Console: http://localhost:9097
 
-3. If you want to check the all services logs, Use below command
-    
-    ```docker-compose -f docker-compose.yml --follow --tail 10```
-
-4. If you want to check logs for a specific service, follow below flow.
+3. If you want to check logs for a specific service, follow below flow.
     * Check service container id: 
         
         ```docker ps -a```
@@ -115,24 +104,9 @@ Any user/ organization that wants to use setup UCI on their own server.
 **Note**: If the services are updated on any server, use server's ip instead of localhost. Eg. http://143.112.x.x:9080
 
 ## Steps after docker setup
-1. To get the messages from any service provider say netcore/gupshup, contact their support team, and ask them to add your ip with netcore/gupshup adapter url
-For Netcore: ip:inbound_extrenal_port/netcore/whatsApp (Eg. - 143.112.x.x:9080/netcore/whatsApp)
-For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/gupshup/whatsApp)
+1. [Tracking Tables](https://hasura.io/docs/latest/graphql/core/databases/postgres/schema/using-existing-database.html#step-1-track-tables-views). Go to the url http://localhost:15003/console/data/default/schema/public and track all tables and relations. The admin secret can be controlled using this [line](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
 
-2. To sent messages via outbound, we'll use API from service provider (Netcore/Gupshup). For Netcore, Contact their support team to grant below credentials :
-    ```
-        NETCORE_WHATSAPP_AUTH_TOKEN = # Authentication Token 
-
-        NETCORE_WHATSAPP_SOURCE = # Source ID for sending messages to Netcore 
-
-        NETCORE_WHATSAPP_URI = # Netcore API Base URL
-    ```
-
-    Update these details in [.env](.env) file and restart inbound & outbound services to reflect the changes.
-
-2. [Tracking Tables](https://hasura.io/docs/latest/graphql/core/databases/postgres/schema/using-existing-database.html#step-1-track-tables-views). Go to the url http://localhost:15003/console/data/default/schema/public and track all tables and relations. The admin secret can be controlled using this [line](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
-
-3. Adding default data for transformers 
+2. Adding default data for transformers 
     - Go to http://localhost:15003/console/data/default/schema/public and track all of the items one by one.
     - In the sidebar click on the SQL button and add the following commands and run.
         ```sql
@@ -146,11 +120,11 @@ For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/g
         VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
         ```
 
-6. Now we can start Sent/Receive messages from channel.
+3. Now we can start Sent/Receive messages from uci web channel [link](http://localhost:9098/).
 
-7. You can start using FusionAuth Console using [link](http://localhost:9011/) and create an Account, for managing users and what resources they are authorized to access.
+4. You can start using FusionAuth Console using [link](http://localhost:9011/) and create an Account, for managing users and what resources they are authorized to access.
 
-8. For managing all the assesment data go on URL : http://localhost:15002/ and track all the tables and relation using [token](https://github.com/samagra-comms/docker-deploy/blob/main/docker-compose.yml#L363).
+5. For managing all the assesment data go on URL : http://localhost:15002/ and track all the tables and relation using [token](https://github.com/samagra-comms/docker-deploy/blob/main/docker-compose.yml#L363).
 
 ## Setting up your first bot
 1. UCI Admin 
@@ -300,6 +274,22 @@ Once the bot is created, we can start using it. If you have set up gupshup/netco
 
 ![](media/Test-Bot-Flow-Whatsapp.jpeg)
 
+## Whatsapp Flow
+1. To get the messages from any service provider say netcore/gupshup, contact their support team, and ask them to add your ip with netcore/gupshup adapter url
+For Netcore: ip:inbound_extrenal_port/netcore/whatsApp (Eg. - 143.112.x.x:9080/netcore/whatsApp)
+For Gupshup: ip:inbound_external_port/gupshup/whatsApp (Eg. - 143.112.x.x:9080/gupshup/whatsApp)
+
+2. To sent messages via outbound, we'll use API from service provider (Netcore/Gupshup). For Netcore, Contact their support team to grant below credentials :
+    ```
+        NETCORE_WHATSAPP_AUTH_TOKEN = # Authentication Token 
+
+        NETCORE_WHATSAPP_SOURCE = # Source ID for sending messages to Netcore 
+
+        NETCORE_WHATSAPP_URI = # Netcore API Base URL
+    ```
+
+    Update these details in [.env](.env) file and restart inbound & outbound services to reflect the changes.
+
 ## Contact Administrator:
 Please write to the Maintainer - **Chakshu (chakshu@samagragovernance.in)**, and cc - **Saket (saket@samagragovernance.in)**, **Sukhpreet (sukhpreet@samagragovernance.in)**
 
@@ -311,3 +301,17 @@ Please write to the Maintainer - **Chakshu (chakshu@samagragovernance.in)**, and
 5. Add Gitpod.
 6. Add CI to verify setup.
 7. Add UCI PWA & Admin Console in this script.
+
+## FYI
+1. If asked **Would you like to share anonymous usage data about this project with the Angular Team at Google under Google’s Privacy Policy at https://policies.google.com/privacy? For more details and how to change this setting, see http://angular.io/analytics.**, Press **y**.
+
+2. This script will download all the service images & start the services.
+
+3. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
+    * Stop all services:
+    
+        ```docker-compose -f docker-compose.yml down```
+
+    * Start all services:
+    
+        ```docker-compose -f docker-compose.yml up -d```
