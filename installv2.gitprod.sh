@@ -64,6 +64,50 @@ done
 echo ""
 }
 
+# Define versions
+INSTALL_NODE_VER=16.14.0
+INSTALL_NVM_VER=0.39.1
+INSTALL_YARN_VER=1.22.17
+
+echo "==> Ensuring .bashrc exists and is writable"
+touch ~/.bashrc
+
+echo "==> Installing node version manager (NVM). Version $INSTALL_NVM_VER"
+# Removed if already installed
+rm -rf ~/.nvm
+# Unset exported variable
+export NVM_DIR=
+
+# Install nvm 
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v$INSTALL_NVM_VER/install.sh | bash
+# Make nvm command available to terminal
+source ~/.nvm/nvm.sh
+
+echo "==> Installing node js version $INSTALL_NODE_VER"
+nvm install $INSTALL_NODE_VER
+
+echo "==> Make this version system default"
+nvm alias default $INSTALL_NODE_VER
+nvm use default
+
+#echo -e "==> Update npm to latest version, if this stuck then terminate (CTRL+C) the execution"
+#npm install -g npm
+
+echo "==> Installing Yarn package manager"
+rm -rf ~/.yarn
+curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $INSTALL_YARN_VER
+
+echo "==> Adding Yarn to environment path"
+# Yarn configurations
+export PATH="$HOME/.yarn/bin:$PATH"
+yarn config set prefix ~/.yarn -g
+
+echo "==> Checking for versions"
+nvm --version
+node --version
+npm --version
+yarn --version
+
 echo "Welcome to the installation script for UCI"
 echo ""
 echo "Let's first start by exporting keys required for installation"
@@ -127,7 +171,6 @@ if [[ ! -e  uci-apis ]]; then
     echo ""
 fi
 
-SYSTEM_IP=`ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
 
 if [[ ! -e uci-web-channel ]]; then
   # UCI Web Channel
@@ -135,9 +178,9 @@ if [[ ! -e uci-web-channel ]]; then
   cp .env-uci-web-channel uci-web-channel/.env
   cd uci-web-channel
   # Replace transport socker url in env
-  transportSocketURL="REACT_APP_TRANSPORT_SOCKET_URL=ws://$SYSTEM_IP:3005"
-  sed -i "3s|^.*$|$transportSocketURL|" .env
-  cat .env
+  uciWebChannelBaseURL=${GITPOD_WORKSPACE_URL:-default_value}
+  uciWebChannelBaseURL="REACT_APP_TRANSPORT_SOCKET_URL=wss://3005-${uciWebChannelBaseURL:8}"
+  sed -i "3s|^.*$|$uciWebChannelBaseURL|" .env
   yarn install
   yarn build
   cd ..
@@ -145,9 +188,9 @@ else
   cp .env-uci-web-channel uci-web-channel/.env
   cd uci-web-channel
   # Replace transport socker url in env
-  transportSocketURL="REACT_APP_TRANSPORT_SOCKET_URL=ws://$SYSTEM_IP:3005"
-  sed -i "3s|^.*$|$transportSocketURL|" .env
-  cat .env
+  uciWebChannelBaseURL=${GITPOD_WORKSPACE_URL:-default_value}
+  uciWebChannelBaseURL="REACT_APP_TRANSPORT_SOCKET_URL=wss://3005-${uciWebChannelBaseURL:8}"
+  sed -i "3s|^.*$|$uciWebChannelBaseURL|" .env
   yarn install
   yarn build
   cd ..
