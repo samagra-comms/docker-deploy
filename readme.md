@@ -49,7 +49,7 @@ Any user/ organization that wants to use setup UCI on their own server.
 
 **Script v2**
 
-[![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/pankajjangid05/docker-deploy/installv2.gitprod.sh)
+[![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/installv2.gitprod.sh)
 
 **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
