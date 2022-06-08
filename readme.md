@@ -120,7 +120,7 @@ Any user/ organization that wants to use setup UCI on their own server.
         VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
         ```
 
-3. Now we can start Sent/Receive messages from channel.
+3. Now we can start Sent/Receive messages from uci web channel [link](http://localhost:9098/).
 
 4. You can start using FusionAuth Console using [link](http://localhost:9011/) and create an Account, for managing users and what resources they are authorized to access.
 
