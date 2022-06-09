@@ -1,6 +1,6 @@
 tasks:
   - name: UCI Server
-    init: bash ./install.sh
+    init: bash ./installv2.gitprod.sh
 
 ports:
   - port: 18080 # Kafka UI
@@ -10,6 +10,42 @@ ports:
   - port: 8080 # ODK
     onOpen: ignore
     visibility: public
-  - port: 9011 # Fusionauth
+  - port: 9080 # Inbound
+    onOpen: ignore
+    visibility: public
+  - port: 8686 # Orchestrator
+    onOpen: ignore
+    visibility: public
+  - port: 9091 # Transformer
+    onOpen: ignore
+    visibility: public
+  - port: 9090 # Outbound
+    onOpen: ignore
+    visibility: public  
+  - port: 9093 # Broadcast Transformer
+    onOpen: ignore
+    visibility: public
+  - port: 9999 # Campaign
+    onOpen: ignore
+    visibility: public
+  - port: 18080 # Kafka UI
+    onOpen: ignore
+    visibility: public
+  - port: 15003 # Bot DB Hasura UI
+    onOpen: ignore
+    visibility: public
+  - port: 9011 # Fusion Auth
+    onOpen: ignore
+    visibility: public
+  - port: 8080 # ODK
+    onOpen: ignore
+    visibility: public
+  - port: 9098 # Chat Frontend
+    onOpen: ignore
+    visibility: public
+  - port: 9097 # Admin Console
+    onOpen: ignore
+    visibility: public
+  - port: 3005 # Uci Transport Socket
     onOpen: ignore
     visibility: public
