@@ -17,5 +17,6 @@
 !uci-admin.conf
 !uci-web-channel.conf
 !.env-uci-web-channel
+!.env-uci-admin
 !install.gitprod.sh
 !installv2.gitprod.sh
