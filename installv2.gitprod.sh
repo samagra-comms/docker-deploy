@@ -196,29 +196,32 @@ else
   cd ..
 fi
 
-# if [[ ! -e uci-admin ]]; then
-#   # UCI Admin
-#   git clone https://github.com/samagra-comms/uci-admin
-#   cp .env-uci-admin uci-admin/.env
-#   cd uci-admin
-#   # uciAdminBaseURL="url: 'http://localhost:9999',"
-#   # sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
-#   npm install -g @angular/cli
-#   npm i
-#   ng build --prod
-#   cd ..
-# else 
-#   if [[ -e .env-uci-admin ]]; then
-#     cp .env-uci-admin uci-admin/.env
-#   fi
-#   cd uci-admin
-#   # uciAdminBaseURL="url: 'http://localhost:9999',"
-#   # sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
-#   npm install -g @angular/cli
-#   npm i
-#   ng build --prod
-#   cd ..
-# fi
+if [[ ! -e uci-admin ]]; then
+  # UCI Admin
+  git clone https://github.com/samagra-comms/uci-admin
+  cp .env-uci-admin uci-admin/.env
+  cd uci-admin
+#   uciWebChannelBaseURL=${GITPOD_WORKSPACE_URL:-default_value}
+#   uciWebChannelBaseURL="REACT_APP_TRANSPORT_SOCKET_URL=wss://3005-${uciWebChannelBaseURL:8}"
+#   sed -i "3s|^.*$|$uciWebChannelBaseURL|" .env
+  uciAdminBaseURL="url: 'http://localhost:9999',"
+  sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
+  npm install -g @angular/cli
+  npm i
+  ng build --prod
+  cd ..
+else 
+  if [[ -e .env-uci-admin ]]; then
+    cp .env-uci-admin uci-admin/.env
+  fi
+  cd uci-admin
+  uciAdminBaseURL="url: 'http://localhost:9999',"
+  sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
+  npm install -g @angular/cli
+  npm i
+  ng build --prod
+  cd ..
+fi
 
 # running docker-compose
 docker-compose up -d fa-search fusionauth fa-db
