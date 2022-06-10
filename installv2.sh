@@ -197,29 +197,33 @@ else
   cd ..
 fi
 
-# if [[ ! -e uci-admin ]]; then
-#   # UCI Admin
-#   git clone https://github.com/samagra-comms/uci-admin
-#   cp .env-uci-admin uci-admin/.env
-#   cd uci-admin
-#   # uciAdminBaseURL="url: 'http://localhost:9999',"
-#   # sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
-#   npm install -g @angular/cli
-#   npm i
-#   ng build --prod
-#   cd ..
-# else 
-#   if [[ -e .env-uci-admin ]]; then
-#     cp .env-uci-admin uci-admin/.env
-#   fi
-#   cd uci-admin
-#   # uciAdminBaseURL="url: 'http://localhost:9999',"
-#   # sed -i "3s|^.*$|$uciAdminBaseURL|" src/environments/environment.prod.ts
-#   npm install -g @angular/cli
-#   npm i
-#   ng build --prod
-#   cd ..
-# fi
+if [[ ! -e uci-admin ]]; then
+  # UCI Admin
+  git clone https://github.com/samagra-comms/uci-admin
+  cp .env-uci-admin uci-admin/.env
+  cd uci-admin
+  # Replace uci api base url in env
+  uciApiBaseURL="NG_APP_url='http://$SYSTEM_IP:9999'"
+  sed -i "1s|^.*$|$uciApiBaseURL|" .env
+  npm install -g @angular/cli
+  npm i
+  ng build --prod
+  cd ..
+else 
+  if [[ -e .env-uci-admin ]]; then
+    cp .env-uci-admin uci-admin/.env
+  fi
+  cd uci-admin
+  # Replace uci api base url in env
+  uciApiBaseURL="NG_APP_url='http://$SYSTEM_IP:9999'"
+  sed -i "1s|^.*$|$uciApiBaseURL|" .env
+  # Remove existing node modules
+  rm -rf node_modules
+  npm install -g @angular/cli
+  npm i
+  ng build --prod
+  cd ..
+fi
 
 # running docker-compose
 docker-compose up -d fa-search fusionauth fa-db
