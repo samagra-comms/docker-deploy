@@ -19,4 +19,4 @@
 !.env-uci-web-channel
 !.env-uci-admin
 !install.gitprod.sh
-!installv2.gitprod.sh
+!installv2.gitpod.sh
