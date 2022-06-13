@@ -27,26 +27,33 @@ Any user/ organization that wants to use setup UCI on their own server.
 4. Please make sure all of the ports mentioned used in the [file](docs/ports.md) are open & are not being used by any other service on server.
 
 
-## Setup Steps 
-1. Take clone of this repository. 
+## Setup Steps
 
-    ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
+1. If you want to setup on server
 
-2. Go to folder
+    * Take clone of this repository. 
+
+        ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
+
+    * Go to folder
     
-    ```cd docker-deploy```
+        ```cd docker-deploy```
 
-3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+    * Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
 
-4. Run below command to download & start the services using docker.
+    * Run below command to download & start the services using docker.
 
-    ```bash install.sh```
+        ```bash install.sh```
 
-**Note**: If you are just here to try the setup please click on the button below.
+    **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
-[![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/installv2.gitprod.sh)
+2. If you want to run on Gitpod
+    
+    <!-- * If you are just here to try the setup please click on the button below. -->
+    * Click on the below button
+    
+        [![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/installv2.gitprod.sh)
 
-**Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
 ## Common Errors and resolution
 1. On Sending the starting message to [UCI front](http://localhost:9098/) , if you do not receive any reply in 1 minute. Follow below steps
@@ -69,6 +76,18 @@ Any user/ organization that wants to use setup UCI on their own server.
         * Start the service
 
             ```docker-compose up -d service_name```
+
+2. When we run script on gitpod sometimes we are facing below error 
+
+    ![](media/gitpod-error-1.png)
+
+    * Stop the all services
+
+         ```docker-compose down```
+
+    * Start the all services
+
+        ```docker-compose up -d```
 
 
 ## After a successful setup completion
