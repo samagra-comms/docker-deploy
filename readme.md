@@ -39,9 +39,7 @@ Any user/ organization that wants to use setup UCI on their own server.
     
     ```cd docker-deploy```
 
-3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
-
-4. Run below command to download & start the services using docker.
+3. Run below command to download & start the services using docker.
 
     ```bash install.sh```
     * If script is fail on runtime then you should run below commands for continue run this script
@@ -52,6 +50,10 @@ Any user/ organization that wants to use setup UCI on their own server.
         * Start the all services
 
             ```docker-compose up -d```
+
+4. While the script is running, You will be asked to enter encryption key, contact the [administrator](#contact-administrator) and get this.
+
+5. If you are asked to enter Netcore Whatsapp Auth Token, Source, URI, enter the details if you have any else press enter. [Click here](#whatsapp-flow) to check the whatsapp configuration for netcore.
 
 
     **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
