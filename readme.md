@@ -137,7 +137,7 @@ Gitpod continuously builds your git branches like a CI server so that you can st
 
     ![](media/gitpod-ss-2.png)
 
-    **Note**: Sometimes script runtime failed in this case you run the below commands
+    **Note**: This script may fail during runtime, in this case run the below commands to restart services.
     * Stop the all services
 
         ```docker-compose down```
@@ -188,7 +188,9 @@ Gitpod continuously builds your git branches like a CI server so that you can st
 
 
 ### **Steps After All Services Running**
-* [click here](#steps-after-docker-setup)
+
+*  When all services are up, we will have to follow the same routine we do in docker setup after steps. [Click here](#steps-after-docker-setup) to view the steps.\
+**Note**: we will have to change the url in the steps to that of gitpod ones.
 
 
 ## Common Errors and resolution
