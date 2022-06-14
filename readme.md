@@ -72,7 +72,7 @@ Any user/ organization that wants to use setup UCI on their own server.
     * Chat Frontend: http://localhost:9098
     * Admin Console: http://localhost:9097
 
-    **Note**: If above mentioned url's are not working then restart the all docker services or check the docker container logs
+    **Note**: If above mentioned url's are not working then restart the all docker services or check the docker container logs.
 
 3. If you want to check logs for a specific service, follow below flow.
     * Show all docker containers
@@ -122,6 +122,7 @@ Gitpod continuously builds your git branches like a CI server so that you can st
     [![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/installv2.gitprod.sh)
 
 2. After click above button we will show below screen
+
     ![](media/gitpod-ss-1.png)
 
 3. If you don't have encryption key please contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and paste in gitpod terminal
@@ -131,6 +132,7 @@ Gitpod continuously builds your git branches like a CI server so that you can st
 5. After configuration, it will take time for cloning and container creation **Around 45 Minutes**
 
 6. If you see below screen it means your all services are up
+
     ![](media/gitpod-ss-2.png)
 
     **Note**: Sometimes script runtime failed in this case you run the below commands
@@ -147,11 +149,11 @@ Gitpod continuously builds your git branches like a CI server so that you can st
     ![](media/gitpod-ss-3.png)
 
 8. How to get gitpod url for individual service
-    * List of running services port. Click the browser icon for get url
+    * List of running services port. Click the browser icon
 
         ![](media/gitpod-ss-4.png)
 
-    * After click it will open in new tab 
+    * After click, It will open in new tab 
         ![](media/gitpod-ss-5.png)
 
         **Gitpod Sample URL** : https://15003-samagracomm-dockerdeplo-93qdi1tvb7x.ws-us47.gitpod.io/console/login
@@ -222,9 +224,8 @@ Gitpod continuously builds your git branches like a CI server so that you can st
         ```docker-compose up -d```
 
 
-
 ## Setting up your first bot
-1. UCI Admin 
+1. UCI Admin
     1. Go to [Link](http://localhost:9097/uci-admin)
     2. Click on Add new button
     3. Fill the form with a unique starting message, start date equals to current & end date more than current date.
@@ -367,9 +368,14 @@ Gitpod continuously builds your git branches like a CI server so that you can st
     **Note**: If you want to use the gupshup adapter, please contact the [administrator](#contact-administrator) for credentials.
 
 ## Start using bot
+### Using Whatsapp
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
 
 ![](media/Test-Bot-Flow-Whatsapp.jpeg)
+
+### Using Web Channel
+
+![](media/Test-Bot-Flow-pwa.png)
 
 ## Whatsapp Flow
 1. To get the messages from any service provider say netcore/gupshup, contact their support team, and ask them to add your ip with netcore/gupshup adapter url
