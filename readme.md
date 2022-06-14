@@ -125,9 +125,9 @@ Gitpod continuously builds your git branches like a CI server so that you can st
 
     ![](media/gitpod-ss-1.png)
 
-3. If you don't have encryption key please contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and paste in gitpod terminal
+3. While the script is running, You will be asked to enter encryption key, contact the [administrator](#contact-administrator) and get this.
 
-4. If you want to setup netcore configurations, [click here](#whatsapp-flow)
+4. If you are asked to enter Netcore Whatsapp Auth Token, Source, URI, enter the details if you have any else press enter. [Click here](#whatsapp-flow) to check the whatsapp configuration for netcore.
 
 5. After configuration, it will take time for cloning and container creation **Around 45 Minutes**
 
@@ -231,7 +231,7 @@ Gitpod continuously builds your git branches like a CI server so that you can st
     3. Fill the form with a unique starting message, start date equals to current & end date more than current date.
     4. Click on next button 
     5. Click on Add logic button
-    6. Fill the form & upload a xml form. Eg. [Sample ODK Excel Form](media/List-QRB-Test-Bot.xlsx)
+    6. Fill the form & upload a xml form. Eg. [Sample ODK Excel Form](media/List-QRB-Test-Bot.xml)
     7. Add this & submit this form.
     8. The bot will be added and we can start using this on [UCI front](http://localhost:9098).
 2. APIs
@@ -401,16 +401,12 @@ Please write to the Maintainer - **Chakshu (chakshu@samagragovernance.in)**, and
 2. [Auto Tracking of tables not supported](https://github.com/hasura/graphql-engine/issues/1418) - this can be automated by writing a script to do POST requests like mentioned [here](https://hasura.io/docs/latest/graphql/core/api-reference/schema-metadata-api/table-view.html).
 3. Adding docker stack commands to scale up.
 4. Add benchmarking.
-5. Add Gitpod.
-6. Add CI to verify setup.
-7. Add UCI PWA & Admin Console in this script.
+5. Add CI to verify setup.
 
 ## FYI
 1. If asked **Would you like to share anonymous usage data about this project with the Angular Team at Google under Google’s Privacy Policy at https://policies.google.com/privacy? For more details and how to change this setting, see http://angular.io/analytics.**, Press **y**.
 
-2. This script will download all the service images & start the services.
-
-3. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
+2. If you change anything in [.env](.env) file, you will have to stop the services, then restart them.
     * Stop all services:
     
         ```docker-compose -f docker-compose.yml down```
