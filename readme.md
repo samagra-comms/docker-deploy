@@ -134,7 +134,7 @@ Any user/ organization that wants to use setup UCI on their own server.
 2. APIs
     1. Convert a ODK Excel form to XML form using [Link](https://getodk.org/xlsform/).
 
-        [Sample ODK Excel Form](media/List-QRB-Test-Bot.xlsx)
+        [Sample ODK Excel Form](media/List%20%26%20QRB%20Test%20Bot.xlsx)
 
     2. Upload this XML from using this api.
         ```
@@ -143,7 +143,7 @@ Any user/ organization that wants to use setup UCI on their own server.
         --form 'form=@"{PATH_OF_ODK_FORM}"'
         ```
 
-        [Sample ODK XML Form](List-QRB-Test-Bot.xml)
+        [Sample ODK XML Form](media/List%20%26%20QRB%20Test%20Bot.xml)
 
         **Response**: The api will return a form id, use this form id in create conversation logic api. Form id Eg. **List-Button-test-v1**
 
