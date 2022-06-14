@@ -5,10 +5,10 @@ Docker-deploy as the name suggests is a docker-based deployment script that can 
 ### Why Docker?
 We are using Docker to enable a smooth, single command experience for all the adopters of UCI to get it up and running. Docker is an open-source containerization platform. It enables developers to package applications into containers—standardized executable components combining application source code with the operating system (OS) libraries and dependencies required to run that code in any environment.
 
-## Intended users
+## Intended Users
 Any user/ organization that wants to use setup UCI on their own server.
 
-## Pre-requisites for setting up UCI
+## Pre-requisites for Setting up UCI
 1. Install Docker if not already installed. [Click Here](https://docs.docker.com/engine/install/ubuntu/)
 
 2. Infra:
@@ -27,32 +27,164 @@ Any user/ organization that wants to use setup UCI on their own server.
 4. Please make sure all of the ports mentioned used in the [file](docs/ports.md) are open & are not being used by any other service on server.
 
 
-## Setup Steps
+## Docker Setup Steps
 
-1. If you want to setup on server
+### **Cloning and Run**
 
-    * Take clone of this repository. 
+1. Take clone of this repository. 
 
-        ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
+    ``` git clone https://github.com/samagra-comms/docker-deploy.git ```
 
-    * Go to folder
+2. Go to folder
     
-        ```cd docker-deploy```
+    ```cd docker-deploy```
 
-    * Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
+3. Contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and update its value in [.env](.env) file. 
 
-    * Run below command to download & start the services using docker.
+4. Run below command to download & start the services using docker.
 
-        ```bash install.sh```
+    ```bash install.sh```
+    * If script is fail on runtime then you should run below commands for continue run this script
+        * Stop the all services
+
+            ```docker-compose down```
+
+        * Start the all services
+
+            ```docker-compose up -d```
+
 
     **Note**: Please note this installation is just the first step. If your needs are not fulfilled with the current installation, please start scaling the individual services by using them in docker stack.
 
-2. If you want to run on Gitpod
+### **After a Successful Docker Setup Completion**
+1. Script execution time - **Around 1 hours** (its depends on your server)
+2. On a successful run of the script you will get below services:
+    * Inbound Service: http://localhost:9080/health
+    * Orchestrator Service: http://localhost:8686/health
+    * Transformer Service: http://localhost:9091/health
+    * Outbound Service: http://localhost:9090/health
+    * Broadcast Transformer Service: http://localhost:9093/health
+    * Campaign Service: http://localhost:9999
+    * Kafka UI: http://localhost:18080/ui/docker-kafka-server/topic
+    * Bot DB Hasura UI: http://localhost:15003/console/login
+    * Fusion Auth: http://localhost:9011
+    * ODK: http://localhost:8080/Aggregate.html#management/forms
+    * Chat Frontend: http://localhost:9098
+    * Admin Console: http://localhost:9097
+
+    **Note**: If above mentioned url's are not working then restart the all docker services or check the docker container logs
+
+3. If you want to check logs for a specific service, follow below flow.
+    * Show all docker containers
+        
+        ```docker ps -a```
     
-    <!-- * If you are just here to try the setup please click on the button below. -->
-    * Click on the below button
+    * Copy the container id from the list for the service you want to see the logs for, and use it in below command.
+        
+        ```docker --follow --tail 10 container_id```
+
+**Note**: If the services are updated on any server, use server's ip instead of localhost. Eg. http://143.112.x.x:9080
+
+### **Steps After Docker Setup**
+1. [Tracking Tables](https://hasura.io/docs/latest/graphql/core/databases/postgres/schema/using-existing-database.html#step-1-track-tables-views). Go to the url http://localhost:15003/console/data/default/schema/public and track all tables and relations. The admin secret can be controlled using this [line](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
+
+2. Adding default data for transformers 
+    - Go to http://localhost:15003/console/data/default/schema/public and track all of the items one by one.
+    - In the sidebar click on the SQL button and add the following commands and run.
+        ```sql
+        INSERT INTO service ("id", "type", "config")
+        VALUES ('94b7c56a-6537-49e3-88e5-4ea548b2f075', 'odk', '{"cadence": { "retries": 0, "timeout": 60, "concurrent": true, "retries-interval": 10 }, "credentials": { "vault": "samagra", "variable": "samagraMainODK" } }');
+        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
+        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', 'WhatsApp', 'gupshup', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
+        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
+        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', 'WhatsApp', 'Netcore', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
+        INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
+        VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
+        ```
+
+3. Now we can start Sent/Receive messages from uci web channel [link](http://localhost:9098/).
+
+4. You can start using FusionAuth Console using [link](http://localhost:9011/) and create an Account, for managing users and what resources they are authorized to access.
+
+5. For managing all the assesment data go on URL : http://localhost:15002/ and track all the tables and relation using [token](https://github.com/samagra-comms/docker-deploy/blob/main/docker-compose.yml#L363).
+
+## Gitpod Setup Steps
+<!-- * If you are just here to try the setup please click on the button below. -->
+### **Introduction**
+Gitpod continuously builds your git branches like a CI server so that you can start coding right away - no more waiting for dependencies to download and builds to finish.
+
+**Gitpod = server-side-dev-envs + dev-env-as-code + prebuilds + IDE + collaboration.**
+
+### **How to Run Script on Gitpod**
+
+1. Click below button for gitpod workspace
+
+    [![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/installv2.gitprod.sh)
+
+2. After click above button we will show below screen
+    ![](media/gitpod-ss-1.png)
+
+3. If you don't have encryption key please contact the [administrator](#contact-administrator) for `ENCRYPTION_KEY` and paste in gitpod terminal
+
+4. If you want to setup netcore configurations, [click here](#whatsapp-flow)
+
+5. After configuration, it will take time for cloning and container creation **Around 45 Minutes**
+
+6. If you see below screen it means your all services are up
+    ![](media/gitpod-ss-2.png)
+
+    **Note**: Sometimes script runtime failed in this case you run the below commands
+    * Stop the all services
+
+        ```docker-compose down```
+
+    * Start the all services
+
+        ```docker-compose up -d```
+
+7. How to get list of open ports
+
+    ![](media/gitpod-ss-3.png)
+
+8. How to get gitpod url for individual service
+    * List of running services port. Click the browser icon for get url
+
+        ![](media/gitpod-ss-4.png)
+
+    * After click it will open in new tab 
+        ![](media/gitpod-ss-5.png)
+
+        **Gitpod Sample URL** : https://15003-samagracomm-dockerdeplo-93qdi1tvb7x.ws-us47.gitpod.io/console/login
+
+
+
+### **After Setup Completion**
+1. On a successful run of the script you will get below services:
+    * Inbound Service: https://9080-gitpodurl/health
+    * Orchestrator Service: https://8686-gitpodurl/health
+    * Transformer Service: https://9091-gitpodurl/health
+    * Outbound Service: https://9090-gitpodurl/health
+    * Broadcast Transformer Service: https://9093-gitpodurl/health
+    * Campaign Service: https://9999-gitpodurl
+    * Kafka UI: https://18080-gitpodurl/ui/docker-kafka-server/topic
+    * Bot DB Hasura UI: https://15003-gitpodurl/console/login
+    * Fusion Auth: https://9011-gitpodurl
+    * ODK: http://8080-gitpodurl/Aggregate.html#management/forms
+    * Chat Frontend: https://9098-gitpodurl
+    * Admin Console: https://9097-gitpodurl
+
+2. If you want to check logs for a specific service, follow below flow.
+    * Show all docker containers
+        
+        ```docker ps -a```
     
-        [![Open v2 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samagra-comms/docker-deploy/installv2.gitprod.sh)
+    * Copy the container id from the list for the service you want to see the logs for, and use it in below command.
+        
+        ```docker --follow --tail 10 container_id```
+
+
+### **Steps After All Services Running**
+* [click here](#steps-after-docker-setup)
 
 
 ## Common Errors and resolution
@@ -90,55 +222,6 @@ Any user/ organization that wants to use setup UCI on their own server.
         ```docker-compose up -d```
 
 
-## After a successful setup completion
-1. Script execution time - **Around 2 hours**
-2. On a successful run of the script you will get below services:
-    * Inbound Service: http://localhost:9080/health
-    * Orchestrator Service: http://localhost:8686/health
-    * Transformer Service: http://localhost:9091/health
-    * Outbound Service: http://localhost:9090/health
-    * Broadcast Transformer Service: http://localhost:9093/health
-    * Campaign Service: http://localhost:9999
-    * Kafka UI: http://localhost:18080/ui/docker-kafka-server/topic
-    * Bot DB Hasura UI: http://localhost:15003/console/login
-    * Fusion Auth: http://localhost:9011
-    * ODK: http://localhost:8080/Aggregate.html#management/forms
-    * Chat Frontend: http://localhost:9098
-    * Admin Console: http://localhost:9097
-
-3. If you want to check logs for a specific service, follow below flow.
-    * Check service container id: 
-        
-        ```docker ps -a```
-    
-    * Copy the container id from the list for the service you want to see the logs for, and use it in below command.
-        
-        ```docker --follow --tail 10 container_id```
-
-**Note**: If the services are updated on any server, use server's ip instead of localhost. Eg. http://143.112.x.x:9080
-
-## Steps after docker setup
-1. [Tracking Tables](https://hasura.io/docs/latest/graphql/core/databases/postgres/schema/using-existing-database.html#step-1-track-tables-views). Go to the url http://localhost:15003/console/data/default/schema/public and track all tables and relations. The admin secret can be controlled using this [line](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
-
-2. Adding default data for transformers 
-    - Go to http://localhost:15003/console/data/default/schema/public and track all of the items one by one.
-    - In the sidebar click on the SQL button and add the following commands and run.
-        ```sql
-        INSERT INTO service ("id", "type", "config")
-        VALUES ('94b7c56a-6537-49e3-88e5-4ea548b2f075', 'odk', '{"cadence": { "retries": 0, "timeout": 60, "concurrent": true, "retries-interval": 10 }, "credentials": { "vault": "samagra", "variable": "samagraMainODK" } }');
-        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
-        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', 'WhatsApp', 'gupshup', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
-        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
-        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', 'WhatsApp', 'Netcore', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
-        INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
-        VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
-        ```
-
-3. Now we can start Sent/Receive messages from uci web channel [link](http://localhost:9098/).
-
-4. You can start using FusionAuth Console using [link](http://localhost:9011/) and create an Account, for managing users and what resources they are authorized to access.
-
-5. For managing all the assesment data go on URL : http://localhost:15002/ and track all the tables and relation using [token](https://github.com/samagra-comms/docker-deploy/blob/main/docker-compose.yml#L363).
 
 ## Setting up your first bot
 1. UCI Admin 
