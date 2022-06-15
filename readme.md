@@ -88,9 +88,14 @@ Any user/ organization that wants to use setup UCI on their own server.
 **Note**: If the services are updated on any server, use server's ip instead of localhost. Eg. http://143.112.x.x:9080
 
 ### **Steps After Docker Setup**
-1. [Tracking Tables](https://hasura.io/docs/latest/graphql/core/databases/postgres/schema/using-existing-database.html#step-1-track-tables-views). Go to the url http://localhost:15003/console/data/default/schema/public and track all tables and relations. The admin secret can be controlled using this [line](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
 
-2. Adding default data for transformers 
+1. **Tracking Tables/Views :** When the script is executed, tables will be created for bot schema via migrations. These tables can be assessed in Hasura. We need to track these tables to expose these tables to Hasura GraphQL. [Click to view](https://hasura.io/docs/latest/graphql/core/databases/postgres/schema/using-existing-database/) tracking overview.
+    
+* Go to the url http://localhost:15003/console/data/default/schema/public
+* The admin secret can be controlled using this [link](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
+
+
+2. After the tables are created, some default data for adapter, transformers etc should be added. These will be used later while creating a bot. Please follow below step:
     - Go to http://localhost:15003/console/data/default/schema/public and track all of the items one by one.
     - In the sidebar click on the SQL button and add the following commands and run.
         ```sql
@@ -104,9 +109,9 @@ Any user/ organization that wants to use setup UCI on their own server.
         VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
         ```
 
-3. Now we can start Sent/Receive messages from uci web channel [link](http://localhost:9098/).
+3. Now we can start Sent/Receive messages using uci web channel http://localhost:9098/ but first you should [create a bot](#setting-up-your-first-bot) for conversation after that you will send starting message.
 
-4. You can start using FusionAuth Console using [link](http://localhost:9011/) and create an Account, for managing users and what resources they are authorized to access.
+4. You can start using FusionAuth Console using http://localhost:9011/ and create an Account, for managing users and what resources they are authorized to access.
 
 5. For managing all the assesment data go on URL : http://localhost:15002/ and track all the tables and relation using [token](https://github.com/samagra-comms/docker-deploy/blob/main/docker-compose.yml#L363).
 
@@ -372,14 +377,17 @@ Gitpod continuously builds your git branches like a CI server so that you can st
     **Note**: If you want to use the gupshup adapter, please contact the [administrator](#contact-administrator) for credentials.
 
 ## Start using bot
+### Using Web Channel
+Once the bot is created, we can start using it. Send the starting message added in the **Create a bot** api.
+
+**Example :** Hi Test Bot
+
+![](media/Test-Bot-Flow-pwa.png)
+
 ### Using Whatsapp
 Once the bot is created, we can start using it. If you have set up gupshup/netcore provider for whatsapp, Send the starting message added in the **Create a bot** api to the whatsapp number.
 
 ![](media/Test-Bot-Flow-Whatsapp.jpeg)
-
-### Using Web Channel
-
-![](media/Test-Bot-Flow-pwa.png)
 
 ## Whatsapp Flow
 1. To get the messages from any service provider say netcore/gupshup, contact their support team, and ask them to add your ip with netcore/gupshup adapter url
