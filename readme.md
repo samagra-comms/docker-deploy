@@ -93,10 +93,10 @@ Any user/ organization that wants to use setup UCI on their own server.
     
     * Go to the url http://localhost:15003/console/data/default/schema/public
     * The admin secret can be controlled using this [link](https://github.com/samagra-comms/docker-deploy/blob/10bdbc4b837a61f74a1270ce53467b15f63d182d/.env#L67)
-
+    * Go to http://localhost:15003/console/data/default/schema/public and track all of the items one by one.
 
 2. After the tables are created, some default data for adapter, transformers etc should be added. These will be used later while creating a bot. Please follow below step:
-    - Go to http://localhost:15003/console/data/default/schema/public and track all of the items one by one.
+    
     - In the sidebar click on the SQL button and add the following commands and run.
         ```sql
         INSERT INTO service ("id", "type", "config")
