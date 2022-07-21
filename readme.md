@@ -102,9 +102,9 @@ Any user/ organization that wants to use setup UCI on their own server.
         INSERT INTO service ("id", "type", "config")
         VALUES ('94b7c56a-6537-49e3-88e5-4ea548b2f075', 'odk', '{"cadence": { "retries": 0, "timeout": 60, "concurrent": true, "retries-interval": 10 }, "credentials": { "vault": "samagra", "variable": "samagraMainODK" } }');
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
-        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', 'WhatsApp', 'gupshup', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
+        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', 'gupshup', 'WhatsApp', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
-        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', 'WhatsApp', 'Netcore', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
+        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', 'Netcore', 'WhatsApp', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
         INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
         VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
         ```
