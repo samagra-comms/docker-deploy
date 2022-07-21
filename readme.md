@@ -105,8 +105,16 @@ Any user/ organization that wants to use setup UCI on their own server.
         VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', 'gupshup', 'WhatsApp', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
         VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', 'Netcore', 'WhatsApp', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
+        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
+        VALUES ('64036edb-e763-44b1-99b8-37b6c7b292c5', 'gupshup', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraGupshupSms');
+        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
+        VALUES ('4e0c568c-7c42-4f88-b1d6-392ad16b8546', 'cdac', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraCdacSms');
+        INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
+        VALUES ('2a704e82-132e-41f2-9746-83e74550d2ea', 'firebase', 'web', '{ "credentials": { "vault": "samagra", "variable": "uci-firebase-notification" } }', 'SamagraFirebaseWeb');
         INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
-        VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075'); 
+        VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075');
+        INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
+        VALUES ('SamagraBroadcast', array['broadcast'], '{}', '774cd134-6657-4688-85f6-6338e2323dde', '94b7c56a-6537-49e3-88e5-4ea548b2f075');  
         ```
 
 3. Now we can start Sent/Receive messages using uci web channel http://localhost:9098/ but first you should [create a bot](#setting-up-your-first-bot) for conversation after that you will send starting message.
