@@ -114,7 +114,9 @@ Any user/ organization that wants to use setup UCI on their own server.
         INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
         VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075');
         INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
-        VALUES ('SamagraBroadcast', array['broadcast'], '{}', '774cd134-6657-4688-85f6-6338e2323dde', '94b7c56a-6537-49e3-88e5-4ea548b2f075');  
+        VALUES ('SamagraBroadcast', array['broadcast'], '{}', '774cd134-6657-4688-85f6-6338e2323dde', '94b7c56a-6537-49e3-88e5-4ea548b2f075');
+         INSERT INTO transformer ("name", "tags", "config", "id", "service_id") 
+        VALUES ('SamagraGeneric', array['generic'], '{}', '0832ca13-c698-4234-8070-b5f708bc0b1a', '94b7c56a-6537-49e3-88e5-4ea548b2f075');
         ```
 
 3. Now we can start Sent/Receive messages using uci web channel http://localhost:9098/ but first you should [create a bot](#setting-up-your-first-bot) for conversation after that you will send starting message.
