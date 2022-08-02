@@ -41,7 +41,7 @@ Any user/ organization that wants to use setup UCI on their own server.
 
 3. Run below command to download & start the services using docker.
 
-    ```bash install.sh```
+    ```bash installv2.sh```
     * If script is fail on runtime then you should run below commands for continue run this script
         * Stop the all services
 
