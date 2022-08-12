@@ -106,7 +106,7 @@ Any user/ organization that wants to use setup UCI on their own server.
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
         VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', 'Netcore', 'WhatsApp', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
-        VALUES ('64036edb-e763-44b1-99b8-37b6c7b292c5', 'gupshup', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraGupshupSms');
+        VALUES ('64036edb-e763-44b1-99b8-37b6c7b292c5', 'gupshup', 'sms', '{"credentials": {"vault": "samagra","variable": "gupshupSamagraSMS"}}', 'SamagraGupshupSms');
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
         VALUES ('4e0c568c-7c42-4f88-b1d6-392ad16b8546', 'cdac', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraCdacSms');
         INSERT INTO adapter ("id", "provider", "channel", "config", "name") 
