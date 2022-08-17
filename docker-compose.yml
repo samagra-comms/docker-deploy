@@ -298,16 +298,16 @@ services:
       - "${BROADCAST_TRANSFORMER_INTERNAL_PORT}:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"
 
   cdac:
-    image: samagragovernance/cdac-service:latest
+    image: samagragovernance/cdac-service:4.10.3
     container_name: cdac
     networks:
       - cassandra
     restart: unless-stopped
     env_file: .env-cdac
     ports:
-      - 9099:9099
+      - 9095:9095
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://cdac:9099/api"]
+      test: ["CMD", "curl", "-f", "http://cdac:9095/api"]
       interval: 2s
       timeout: 5s
       retries: 20
