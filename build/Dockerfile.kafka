@@ -1,0 +1,3 @@
+FROM wurstmeister/kafka
+
+COPY ./etc/kafka_server_jaas.conf /etc/kafka/kafka_server_jaas.conf
