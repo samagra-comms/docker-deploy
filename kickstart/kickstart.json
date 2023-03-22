@@ -1,30 +1,51 @@
 {
-  "variables": {
-    "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
-    "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
-    "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}"
-  },
-  "apiKeys": [
-    {
-      "key": "#{apiKey}"
-    }
-  ],
-  "requests": [
-    {
-      "method": "POST",
-      "url": "/api/user/registration",
-      "body": {
-        "user": {
-          "email": "#{adminEmail}",
-          "password": "#{adminPassword}"
-        },
-        "registration": {
-          "applicationId": "#{FUSIONAUTH_APPLICATION_ID}",
-          "roles": [
-            "admin"
-          ]
+    "variables": {
+        "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
+        "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
+        "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}",
+        "applicationName": "#{ENV.APPLICATION_NAME}",
+        "applicationUUID": "#{ENV.APPLICATION_UUID}"
+    },
+    "apiKeys": [
+        {
+            "key": "#{apiKey}"
         }
-      }
-    }
-  ]
+    ],
+    "requests": [
+        {
+            "method": "POST",
+            "url": "/api/user/registration",
+            "body": {
+                "user": {
+                    "email": "#{adminEmail}",
+                    "password": "#{adminPassword}"
+                },
+                "registration": {
+                    "applicationId": "#{FUSIONAUTH_APPLICATION_ID}",
+                    "roles": [
+                        "admin"
+                    ]
+                }
+            }
+        },
+        {
+            "method": "POST",
+            "url": "/api/application/#{applicationUUID}",
+            "tenantId": "#{FUSIONAUTH_TENANT_ID}",
+            "body": {
+              "application": {
+                "name": "#{applicationName}",
+                "oauthConfiguration": {
+                    "enabledGrants": ["authorization_code", "refresh_token"],
+                    "generateRefreshTokens": true
+                },
+                "loginConfiguration": {
+                    "allowTokenRefresh": true,
+                    "generateRefreshTokens": true,
+                    "enableJwtRefresh": true
+                }
+              }
+            }
+        }
+    ]
 }
