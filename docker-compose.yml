@@ -27,7 +27,7 @@ services:
           cd ../../
           pm2-runtime app.js
     ports:
-      - 9999:9999
+      - 9999
   
   uci-api-db:
     container_name: uci-api-db
@@ -40,7 +40,7 @@ services:
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
     ports:
-      - "5437:5432"
+      - "5432"
     volumes:
       - pgdata-uci-api-db:/var/lib/postgresql/data
 
@@ -63,7 +63,7 @@ services:
       - cassandra
     env_file: .env
     ports:
-      - "6399:6379"
+      - "6379"
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
     volumes:
@@ -112,7 +112,7 @@ services:
     networks:
       - cassandra
     ports:
-      - '6388:6379'
+      - '6379'
     command: ['redis-server', '--appendonly', 'yes']
     hostname: redis
     volumes:
@@ -126,7 +126,7 @@ services:
     networks:
       - cassandra
     ports:
-      - "2181:2181"
+      - "2181"
   
   kafka:
     container_name: kafka
@@ -134,7 +134,7 @@ services:
     networks:
       - cassandra
     ports:
-      - "9094:9094"
+      - "9094"
     environment:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://dev.uci.samagra.io:9094
@@ -305,7 +305,7 @@ services:
     restart: unless-stopped
     env_file: .env-cdac
     ports:
-      - 9095:9095
+      - 9095
     healthcheck:
       test: ["CMD", "curl", "-f", "http://cdac:9095/api"]
       interval: 2s
@@ -319,11 +319,11 @@ services:
     networks:
       - cassandra
     ports:
-      - 7000:7000
-      - 7001:7001
-      - 7199:7199
-      - 9041:9042
-      - 9160:9160
+      - 7000
+      - 7001
+      - 7199
+      - 9042
+      - 9160
     environment:
       - MAX_HEAP_SIZE=1000M
       - HEAP_NEWSIZE=1000M
@@ -389,7 +389,7 @@ services:
     networks:
       - cassandra
     ports:
-      - 5431:5432
+      - 5432
     environment:
       - POSTGRES_PASSWORD=${ODK_POSTGRES_PASSWORD}
       - POSTGRES_USER=${ODK_POSTGRES_USER}
@@ -422,7 +422,7 @@ services:
       - AGGREGATE_HOST=
       - DB_URL=jdbc:postgresql://aggregate-db:5432/${ODK_POSTGRES_DB}?user=${ODK_POSTGRES_USER}&password=${ODK_POSTGRES_PASSWORD}
     ports:
-      - 8080:8080
+      - 8085:8080
     volumes:
       - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
 
