@@ -422,7 +422,7 @@ services:
       - AGGREGATE_HOST=
       - DB_URL=jdbc:postgresql://aggregate-db:5432/${ODK_POSTGRES_DB}?user=${ODK_POSTGRES_USER}&password=${ODK_POSTGRES_PASSWORD}
     ports:
-      - 8085:8080
+      - 8080:8080
     volumes:
       - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
 
