@@ -6,13 +6,9 @@ networks:
 
 services:
 # UCI API
-
   uci-api-service:
     build: ./uci-apis/
     image: federation-service
-    networks:
-      - cassandra
-    container_name: federation-service
     restart: unless-stopped
     env_file: .env
     command:
@@ -30,10 +26,7 @@ services:
       - 9999:9999
   
   uci-api-db:
-    container_name: uci-api-db
     image: postgres:12
-    networks:
-      - cassandra
     env_file: .env
     environment:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
@@ -45,10 +38,7 @@ services:
       - pgdata-uci-api-db:/var/lib/postgresql/data
 
   uci-api-db-gql:
-    container_name: uci-api-db-gql
     image: hasura/graphql-engine:v2.0.0-alpha.1
-    networks:
-      - cassandra
     env_file: .env
     ports:
       - "15003:8080"
@@ -57,10 +47,7 @@ services:
     restart: always
 
   uci-api-scheduler-db:
-    container_name: uci-api-scheduler-db
     image: redis:latest
-    networks:
-      - cassandra
     env_file: .env
     ports:
       - "6399:6379"
@@ -71,12 +58,8 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
-
   uci-transport-socket:
     image: samagragovernance/uci-transport-socket:655da87
-    container_name: uci-transport-socket
-    networks:
-      - cassandra
     restart: unless-stopped
     environment:
       REDIS_HOST: cache
@@ -86,6 +69,7 @@ services:
     ports:
       - 3005:3005
 
+  # TODO: Needs to be fixed for general purpose use
   uci-web-channel:
     image: nginx
     volumes:
@@ -98,19 +82,28 @@ services:
     - "9098:80"
 
   uci-admin:
-    image: nginx
-    volumes:
-    - ./nginx.conf:/etc/nginx/nginx.conf
-    - ./uci-admin.conf:/etc/nginx/sites-enabled/default
-    - ./uci-admin/dist:/usr/site
+    build: 
+      context: uci-admin
+      args:
+        ENV NG_APP_url: ${NG_APP_url}
+        ENV NG_APP_nl_url: ${NG_APP_nl_url}
+        ENV NG_APP_nl_login_url: ${NG_APP_nl_login_url}
+        ENV NG_APP_nl_login_token: ${NG_APP_nl_login_token}
+        ENV NG_APP_nl_application_id: ${NG_APP_nl_application_id}
+        ENV NG_APP_blobUrl: ${NG_APP_blobUrl}
+        ENV NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
+        ENV NG_APP_adapterId: ${NG_APP_adapterId}
+        ENV NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
+        ENV NG_APP_userId: ${NG_APP_userId}
+        ENV NG_APP_orgId: ${NG_APP_orgId}
+        ENV NG_APP_token: ${NG_APP_token}
+    image: uci-admin
     ports:
     - "9097:80"
 
+
   cache:
-    container_name: cache
     image: redis:latest
-    networks:
-      - cassandra
     ports:
       - '6388:6379'
     command: ['redis-server', '--appendonly', 'yes']
@@ -120,19 +113,13 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # Kafka
-
   zookeeper:
     image: wurstmeister/zookeeper
-    networks:
-      - cassandra
     ports:
       - "2181:2181"
   
   kafka:
-    container_name: kafka
     image: wurstmeister/kafka
-    networks:
-      - cassandra
     ports:
       - "9094:9094"
     environment:
@@ -156,8 +143,6 @@ services:
   schema-registry:
     image: confluentinc/cp-schema-registry
     restart: on-failure
-    networks:
-      - cassandra
     depends_on:
       - kafka
     environment:
@@ -171,8 +156,6 @@ services:
     depends_on:
       - kafka
       - schema-registry
-    networks:
-      - cassandra
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:9092'
       CONNECT_REST_PORT: '8083'
@@ -195,40 +178,36 @@ services:
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_PLUGIN_PATH: ' /usr/share/java/'
 
-  akhq:
-    image: tchiotludo/akhq
-    networks:
-      - cassandra
-    ports:
-     - "18080:8080"
-    environment:
-      AKHQ_CONFIGURATION: |
-        akhq:
-          security:
-            basic-auth:
-              - username: admin
-                password: d49745a74edfd20705ccaa277209db554b6b0d78c20780a4facf87e88aee78c0
-                groups: 
-                  - admin
-          connections:
-            docker-kafka-server:
-              properties:
-                bootstrap.servers: "kafka:9092"
-              schema-registry:
-                url: "http://schema-registry:8085"
-              connect:
-                - name: "connect"
-                  url: "http://connect:8083"
+  # akhq:
+  #   image: tchiotludo/akhq
+  #   ports:
+  #    - "18080:8080"
+  #   environment:
+  #     AKHQ_CONFIGURATION: |
+  #       akhq:
+  #         security:
+  #           basic-auth:
+  #             - username: admin
+  #               password: d49745a74edfd20705ccaa277209db554b6b0d78c20780a4facf87e88aee78c0
+  #               groups: 
+  #                 - admin
+  #         connections:
+  #           docker-kafka-server:
+  #             properties:
+  #               bootstrap.servers: "kafka:9092"
+  #             schema-registry:
+  #               url: "http://schema-registry:8085"
+  #             connect:
+  #               - name: "connect"
+  #                 url: "http://connect:8083"
+  
 
 # UCI Core
-
   inbound:
-    container_name: inbound
     image: "samagragovernance/inbound:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    networks:
-      - cassandra
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${INBOUND_INTERNAL_PORT}"]
       interval: 60s
@@ -238,11 +217,8 @@ services:
       - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
 
   orchestrator:
-    container_name: orchestrator
     image: "samagragovernance/orchestrator:${CURRENT_VERSION}"
     restart: always
-    networks:
-      - cassandra
     env_file: .env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${ORCHESTRATOR_INTERNAL_PORT}"]
@@ -253,12 +229,10 @@ services:
       - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
 
   transformer:
-    container_name: transformer
     image: "samagragovernance/transformer:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    networks:
-      - cassandra
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${TRANSFORMER_INTERNAL_PORT}"]
       interval: 30s
@@ -268,12 +242,9 @@ services:
       - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
 
   outbound:
-    container_name: outbound
     image: "samagragovernance/outbound:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    networks:
-      - cassandra
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${OUTBOUND_INTERNAL_PORT}"]
       interval: 30s
@@ -283,12 +254,9 @@ services:
       - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
 
   broadcast-transformer:
-    container_name: broadcast-transformer
     image: "samagragovernance/broadcast-transformer:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    networks:
-      - cassandra
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"]
       interval: 60s
@@ -299,9 +267,6 @@ services:
 
   cdac:
     image: samagragovernance/cdac-service:4.10.3
-    container_name: cdac
-    networks:
-      - cassandra
     restart: unless-stopped
     env_file: .env-cdac
     ports:
@@ -314,10 +279,6 @@ services:
 
   cass:
     image: cassandra:latest
-    container_name: cass
-    hostname: cass
-    networks:
-      - cassandra
     ports:
       - 7000:7000
       - 7001:7001
@@ -346,18 +307,13 @@ services:
 
   redis:
     image: "redis:alpine"
-    networks:
-      - cassandra
     ports:
       - "127.0.0.1:6389:6379"
     volumes:
       - redis-data:/data   
   
   formsdb:
-    container_name: formsdb
     image: postgres:9.6
-    networks:
-      - cassandra
     environment:
       POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
       POSTGRES_USER: ${FORMS_DB_USERNAME}
@@ -369,8 +325,6 @@ services:
 
   graphql-formsdb:
     image: hasura/graphql-engine:latest
-    networks:
-      - cassandra
     ports:
       - "15002:8080"
     depends_on:
@@ -384,10 +338,7 @@ services:
 
 # ODK      
   aggregate-db:
-    container_name: aggregate-db
     image: postgres:9.6-alpine
-    networks:
-      - cassandra
     ports:
       - 5431:5432
     environment:
@@ -400,16 +351,11 @@ services:
 
   wait_for_db:
     image: dadarek/wait-for-dependencies
-    networks:
-      - cassandra
     depends_on:
       - aggregate-db
     command: aggregate-db:5432
 
   aggregate-server:
-    container_name: aggregate-server
-    networks:
-      - cassandra
     depends_on:
       - wait_for_db
     image: tomcat:alpine
@@ -429,9 +375,6 @@ services:
 # Fusion Auth
 
   fa-search:
-    container_name: fa-search
-    networks:
-      - cassandra
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
     environment:
       - cluster.name=fusionauth
@@ -447,9 +390,6 @@ services:
       - fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
-    container_name: fusionauth
-    networks:
-      - cassandra
     image: fusionauth/fusionauth-app:latest
     depends_on:
       - fa-search
@@ -474,9 +414,6 @@ services:
       - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
-    container_name: fa-db
-    networks:
-      - cassandra
     image: postgres:12
     environment:
       - POSTGRES_USER=${FUSIONAUTH_POSTGRES_USER}
