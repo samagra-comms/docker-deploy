@@ -85,18 +85,18 @@ services:
     build: 
       context: uci-admin
       args:
-        ENV NG_APP_url: ${NG_APP_url}
-        ENV NG_APP_nl_url: ${NG_APP_nl_url}
-        ENV NG_APP_nl_login_url: ${NG_APP_nl_login_url}
-        ENV NG_APP_nl_login_token: ${NG_APP_nl_login_token}
-        ENV NG_APP_nl_application_id: ${NG_APP_nl_application_id}
-        ENV NG_APP_blobUrl: ${NG_APP_blobUrl}
-        ENV NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
-        ENV NG_APP_adapterId: ${NG_APP_adapterId}
-        ENV NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
-        ENV NG_APP_userId: ${NG_APP_userId}
-        ENV NG_APP_orgId: ${NG_APP_orgId}
-        ENV NG_APP_token: ${NG_APP_token}
+        NG_APP_url: ${NG_APP_url}
+        NG_APP_nl_url: ${NG_APP_nl_url}
+        NG_APP_nl_login_url: ${NG_APP_nl_login_url}
+        NG_APP_nl_login_token: ${NG_APP_nl_login_token}
+        NG_APP_nl_application_id: ${NG_APP_nl_application_id}
+        NG_APP_blobUrl: ${NG_APP_blobUrl}
+        NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
+        NG_APP_adapterId: ${NG_APP_adapterId}
+        NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
+        NG_APP_userId: ${NG_APP_userId}
+        NG_APP_orgId: ${NG_APP_orgId}
+        NG_APP_token: ${NG_APP_token}
     image: uci-admin
     ports:
     - "9097:80"
