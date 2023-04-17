@@ -20,3 +20,4 @@
 !.env-uci-admin
 !install.gitprod.sh
 !installv2.gitpod.sh
+!docker-compose-debug.yml

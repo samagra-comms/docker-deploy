@@ -1,9 +1,5 @@
 version: "3"
 
-networks:   
-  cassandra:     
-    driver: bridge
-
 services:
 # UCI API
   uci-api-service:
@@ -178,41 +174,11 @@ services:
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_PLUGIN_PATH: ' /usr/share/java/'
 
-  # akhq:
-  #   image: tchiotludo/akhq
-  #   ports:
-  #    - "18080:8080"
-  #   environment:
-  #     AKHQ_CONFIGURATION: |
-  #       akhq:
-  #         security:
-  #           basic-auth:
-  #             - username: admin
-  #               password: d49745a74edfd20705ccaa277209db554b6b0d78c20780a4facf87e88aee78c0
-  #               groups: 
-  #                 - admin
-  #         connections:
-  #           docker-kafka-server:
-  #             properties:
-  #               bootstrap.servers: "kafka:9092"
-  #             schema-registry:
-  #               url: "http://schema-registry:8085"
-  #             connect:
-  #               - name: "connect"
-  #                 url: "http://connect:8083"
-  
-
 # UCI Core
   inbound:
     image: "samagragovernance/inbound:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${INBOUND_INTERNAL_PORT}"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
     ports:
       - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
 
@@ -220,11 +186,6 @@ services:
     image: "samagragovernance/orchestrator:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${ORCHESTRATOR_INTERNAL_PORT}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     ports:
       - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
 
@@ -232,12 +193,6 @@ services:
     image: "samagragovernance/transformer:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${TRANSFORMER_INTERNAL_PORT}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     ports:
       - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
 
@@ -245,11 +200,6 @@ services:
     image: "samagragovernance/outbound:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${OUTBOUND_INTERNAL_PORT}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     ports:
       - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
 
@@ -257,11 +207,6 @@ services:
     image: "samagragovernance/broadcast-transformer:${CURRENT_VERSION}"
     restart: always
     env_file: .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
     ports:
       - "${BROADCAST_TRANSFORMER_INTERNAL_PORT}:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"
 
@@ -271,11 +216,6 @@ services:
     env_file: .env-cdac
     ports:
       - 9095:9095
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://cdac:9095/api"]
-      interval: 2s
-      timeout: 5s
-      retries: 20
 
   cass:
     image: cassandra:latest
@@ -422,6 +362,21 @@ services:
       - "5436:${FUSIONAUTH_POSTGRES_PORT}"
     volumes:
       - ./pgdata-fa-db:/var/lib/postgresql/data
+  
+  vault:
+    image: vault:1.10.3
+    volumes:
+      - ./vault/vault.json:/vault/config/vault.json
+      - vault-data:/vault/file
+    ports:
+      - 8200:8200
+    environment:
+      - VAULT_ADDR=http://0.0.0.0:8200
+      - VAULT_API_ADDR=http://0.0.0.0:8200
+      - VAULT_ADDRESS=http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
 
 volumes:
   db-data-formsdb:
@@ -432,3 +387,4 @@ volumes:
   fa-es-data:
   fa-config:
   pgdata-uci-api-db:
+  vault-data:
