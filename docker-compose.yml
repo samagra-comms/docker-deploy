@@ -3,7 +3,8 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    build: ./uci-apis/
+    build: 
+      context: ./uci-apis/v2/uci
     image: federation-service
     restart: always
     env_file: .env
