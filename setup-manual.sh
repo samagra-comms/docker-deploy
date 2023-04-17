@@ -93,7 +93,7 @@ fi
 
 if [[ ! -e uci-admin ]]; then
   # UCI Admin
-  git clone https://github.com/samagra-comms/uci-admin
+  git clone -b nlp https://github.com/samagra-comms/uci-admin
   # Replace uci api base url in env
   uciApiBaseURL="NG_APP_url='http://$SYSTEM_IP:9999'"
   sed -i "1s|^.*$|$uciApiBaseURL|" .env
