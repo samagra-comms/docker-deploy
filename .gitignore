@@ -21,3 +21,6 @@
 !install.gitprod.sh
 !installv2.gitpod.sh
 !docker-compose-debug.yml
+!vault/vault.json
+!vault
+!setup-manual.sh

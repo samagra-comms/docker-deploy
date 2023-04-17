@@ -5,25 +5,16 @@ services:
   uci-api-service:
     build: ./uci-apis/
     image: federation-service
-    restart: unless-stopped
+    restart: always
     env_file: .env
-    command:
-        - /bin/bash
-        - -c
-        - |
-          curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
-          cd migrations/uci-core/
-          pwd
-          hasura migrate apply --endpoint http://uci-api-db-gql:8080
-          echo "Server Started"
-          cd ../../
-          pm2-runtime app.js
+
     ports:
       - 9999:9999
   
   uci-api-db:
     image: postgres:12
     env_file: .env
+    restart: always
     environment:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
@@ -35,16 +26,17 @@ services:
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
+    restart: always
     env_file: .env
     ports:
       - "15003:8080"
     depends_on:
       - uci-api-db
-    restart: always
 
   uci-api-scheduler-db:
     image: redis:latest
     env_file: .env
+    restart: always
     ports:
       - "6399:6379"
     command: ["redis-server", "--appendonly", "yes"]
@@ -56,7 +48,7 @@ services:
 # UCI PWA Adapter
   uci-transport-socket:
     image: samagragovernance/uci-transport-socket:655da87
-    restart: unless-stopped
+    restart: always
     environment:
       REDIS_HOST: cache
       REDIS_PORT: 6379
@@ -67,6 +59,7 @@ services:
 
   # TODO: Needs to be fixed for general purpose use
   uci-web-channel:
+    restart: always
     image: nginx
     volumes:
     - ./nginx.conf:/etc/nginx/nginx.conf
@@ -78,6 +71,7 @@ services:
     - "9098:80"
 
   uci-admin:
+    restart: always
     build: 
       context: uci-admin
       args:
@@ -100,6 +94,7 @@ services:
 
   cache:
     image: redis:latest
+    restart: always
     ports:
       - '6388:6379'
     command: ['redis-server', '--appendonly', 'yes']
@@ -111,11 +106,13 @@ services:
 # Kafka
   zookeeper:
     image: wurstmeister/zookeeper
+    restart: always
     ports:
       - "2181:2181"
   
   kafka:
     image: wurstmeister/kafka
+    restart: always
     ports:
       - "9094:9094"
     environment:
@@ -138,7 +135,7 @@ services:
 
   schema-registry:
     image: confluentinc/cp-schema-registry
-    restart: on-failure
+    restart: always
     depends_on:
       - kafka
     environment:
@@ -149,6 +146,7 @@ services:
 
   connect:
     image: confluentinc/cp-kafka-connect
+    restart: always
     depends_on:
       - kafka
       - schema-registry
@@ -212,13 +210,14 @@ services:
 
   cdac:
     image: samagragovernance/cdac-service:4.10.3
-    restart: unless-stopped
+    restart: always
     env_file: .env-cdac
     ports:
       - 9095:9095
 
   cass:
     image: cassandra:latest
+    restart: always
     ports:
       - 7000:7000
       - 7001:7001
@@ -229,7 +228,6 @@ services:
       - MAX_HEAP_SIZE=1000M
       - HEAP_NEWSIZE=1000M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
-    restart: always
     volumes:
       - ./out/cd-new:/var/lib/cassandra
     healthcheck:
@@ -246,6 +244,7 @@ services:
       retries: 10
 
   redis:
+    restart: always
     image: "redis:alpine"
     ports:
       - "127.0.0.1:6389:6379"
@@ -253,6 +252,7 @@ services:
       - redis-data:/data   
   
   formsdb:
+    restart: always
     image: postgres:9.6
     environment:
       POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
@@ -264,12 +264,12 @@ services:
       - db-data-formsdb:/var/lib/postgresql/data
 
   graphql-formsdb:
+    restart: always
     image: hasura/graphql-engine:latest
     ports:
       - "15002:8080"
     depends_on:
       - formsdb
-    restart: always
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:yoursupersecret@formsdb:5432/formsdb
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
@@ -278,6 +278,7 @@ services:
 
 # ODK      
   aggregate-db:
+    restart: always
     image: postgres:9.6-alpine
     ports:
       - 5431:5432
@@ -290,12 +291,14 @@ services:
       - ./pgdata-odk:/var/lib/postgresql/data
 
   wait_for_db:
+    restart: always
     image: dadarek/wait-for-dependencies
     depends_on:
       - aggregate-db
     command: aggregate-db:5432
 
   aggregate-server:
+    restart: always
     depends_on:
       - wait_for_db
     image: tomcat:alpine
@@ -315,13 +318,13 @@ services:
 # Fusion Auth
 
   fa-search:
+    restart: always
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
     environment:
       - cluster.name=fusionauth
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
       - discovery.type=single-node
-    restart: unless-stopped
     # ulimits: # Don't work with Gitpod
     #   memlock:
     #     soft: -1
@@ -331,6 +334,7 @@ services:
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
+    restart: always
     depends_on:
       - fa-search
     environment:
@@ -346,7 +350,6 @@ services:
       FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
       FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
       FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
-    restart: unless-stopped
     ports:
       - 9011:9011
     volumes:
@@ -355,6 +358,7 @@ services:
 
   fa-db:
     image: postgres:12
+    restart: always
     environment:
       - POSTGRES_USER=${FUSIONAUTH_POSTGRES_USER}
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
@@ -365,6 +369,7 @@ services:
   
   vault:
     image: vault:1.10.3
+    restart: always
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
       - vault-data:/vault/file
