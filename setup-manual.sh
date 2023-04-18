@@ -146,4 +146,4 @@ fi
 
 docker-compose up -d
 
-echo "All Services are up, go through INSTALL.md for further steps"
+echo "All Services are up!"
