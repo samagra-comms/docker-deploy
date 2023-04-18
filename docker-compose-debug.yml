@@ -14,8 +14,8 @@ services:
         akhq:
           security:
             basic-auth:
-              - username: admin
-                password: d49745a74edfd20705ccaa277209db554b6b0d78c20780a4facf87e88aee78c0
+              - username: ${AKHQ_USER}
+                password: ${VAULT_PASS}
                 groups: 
                   - admin
           connections:
