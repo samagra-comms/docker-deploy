@@ -9,6 +9,7 @@ services:
     image: tchiotludo/akhq
     ports:
      - "18080:8080"
+    env_file: .env
     environment:
       AKHQ_CONFIGURATION: |
         akhq:
