@@ -23,7 +23,7 @@ services:
     ports:
       - "5437:5432"
     volumes:
-      - pgdata-uci-api-db:/var/lib/postgresql/data
+      - ./pgdata-uci-api-db:/var/lib/postgresql/data
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
@@ -250,7 +250,7 @@ services:
     ports:
       - "127.0.0.1:6389:6379"
     volumes:
-      - redis-data:/data   
+      - ./redis-data:/data   
   
   formsdb:
     restart: always
@@ -262,7 +262,7 @@ services:
     ports:
       - "0.0.0.0:5435:5432"
     volumes:
-      - db-data-formsdb:/var/lib/postgresql/data
+      - ./formsdb-data:/var/lib/postgresql/data
 
   graphql-formsdb:
     restart: always
@@ -331,7 +331,7 @@ services:
     #     soft: -1
     #     hard: -1
     volumes:
-      - fa-es-data:/usr/share/elasticsearch/data
+      - ./fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
@@ -354,7 +354,7 @@ services:
     ports:
       - 9011:9011
     volumes:
-      - fa-config:/usr/local/fusionauth/config
+      - ./fa-config:/usr/local/fusionauth/config
       - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
@@ -373,7 +373,7 @@ services:
     restart: always
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
-      - vault-data:/vault/file
+      - ./vault-data:/vault/file
     ports:
       - 8200:8200
     environment:
@@ -383,14 +383,3 @@ services:
     cap_add:
       - IPC_LOCK
     command: vault server -config=/vault/config/vault.json
-
-volumes:
-  db-data-formsdb:
-  db-data-messagedb:
-  kafka-data:
-  redis-data:
-  license.json:
-  fa-es-data:
-  fa-config:
-  pgdata-uci-api-db:
-  vault-data:
