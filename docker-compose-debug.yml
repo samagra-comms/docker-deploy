@@ -16,7 +16,7 @@ services:
           security:
             basic-auth:
               - username: ${AKHQ_USER}
-                password: ${VAULT_PASS}
+                password: ${AKHQ_PASS}
                 groups: 
                   - admin
           connections:
