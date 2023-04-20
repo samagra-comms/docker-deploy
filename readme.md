@@ -177,11 +177,11 @@ Gitpod continuously builds your git branches like a CI server so that you can st
     ![](media/gitpod-ss-2.png)
 
     **Note**: This script may fail during runtime, in this case run the below commands to restart services.
-    * Stop the all services
+    * Stop all the services
 
         ```docker-compose down```
 
-    * Start the all services
+    * Start all the services
 
         ```docker-compose up -d```
 
