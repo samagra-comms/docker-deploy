@@ -23,7 +23,7 @@ services:
     ports:
       - "5437:5432"
     volumes:
-      - ./pgdata-uci-api-db:/var/lib/postgresql/data
+      - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
@@ -43,8 +43,8 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
     volumes:
-      - ./uci-api-scheduler-db:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - ./data/uci-api-scheduler-db:/data
+      - ./data/redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
   uci-transport-socket:
@@ -63,9 +63,9 @@ services:
     restart: always
     image: nginx
     volumes:
-    - ./nginx.conf:/etc/nginx/nginx.conf
-    - ./uci-web-channel.conf:/etc/nginx/sites-enabled/default
-    - ./uci-web-channel/build:/usr/site
+    - ./data/nginx.conf:/etc/nginx/nginx.conf
+    - ./data/uci-web-channel.conf:/etc/nginx/sites-enabled/default
+    - ./data/uci-web-channel/build:/usr/site
     # environment:
     #   REACT_APP_TRANSPORT_SOCKET_URL: "ws://localhost:3005"
     ports:
@@ -101,8 +101,8 @@ services:
     command: ['redis-server', '--appendonly', 'yes']
     hostname: redis
     volumes:
-      - ./redis-data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - ./data/redis-data:/data
+      - ./data/redis.conf:/usr/local/etc/redis/redis.conf
 
 # Kafka
   zookeeper:
@@ -127,10 +127,10 @@ services:
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
       KAFKA_LOG_DIRS: ./data00/kafka-logs
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
-      - ./data00/kafka:/kafka
-      - ./kafka-data:/var/lib/kafka:Z
+      - ./data/etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
+      - ./data/var/run/docker.sock:/var/run/docker.sock
+      - ./data/data00/kafka:/kafka
+      - ./data/kafka-data:/var/lib/kafka:Z
     links:
       - zookeeper
 
@@ -230,7 +230,7 @@ services:
       - HEAP_NEWSIZE=1000M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
     volumes:
-      - ./out/cd-new:/var/lib/cassandra
+      - ./data/out/cd-new:/var/lib/cassandra
     healthcheck:
       test:
         [
@@ -250,19 +250,19 @@ services:
     ports:
       - "127.0.0.1:6389:6379"
     volumes:
-      - ./redis-data:/data   
+      - ./data/redis-data:/data   
   
   formsdb:
     restart: always
     image: postgres:9.6
     environment:
       POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
-      POSTGRES_USER: ${FORMS_DB_USERNAME}
+      POSTGRES_USER: ${FORMS_DB_USERNAME}formsdb
       POSTGRES_DB: ${FORMS_DB_NAME}
     ports:
       - "0.0.0.0:5435:5432"
     volumes:
-      - ./formsdb-data:/var/lib/postgresql/data
+      - ./data/formsdb-data:/var/lib/postgresql/data
 
   graphql-formsdb:
     restart: always
@@ -288,8 +288,8 @@ services:
       - POSTGRES_USER=${ODK_POSTGRES_USER}
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
-      - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
-      - ./pgdata-odk:/var/lib/postgresql/data
+      - ./data/odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
+      - ./data/pgdata-odk:/var/lib/postgresql/data
 
   wait_for_db:
     restart: always
@@ -314,7 +314,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
+      - ./data/odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
 
 # Fusion Auth
 
@@ -331,7 +331,7 @@ services:
     #     soft: -1
     #     hard: -1
     volumes:
-      - ./fa-es-data:/usr/share/elasticsearch/data
+      - ./data/fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
@@ -354,8 +354,8 @@ services:
     ports:
       - 9011:9011
     volumes:
-      - ./fa-config:/usr/local/fusionauth/config
-      - ./kickstart:/usr/local/fusionauth/kickstart
+      - ./data/fa-config:/usr/local/fusionauth/config
+      - ./data/kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
     image: postgres:12
@@ -366,14 +366,14 @@ services:
     ports:
       - "5436:${FUSIONAUTH_POSTGRES_PORT}"
     volumes:
-      - ./pgdata-fa-db:/var/lib/postgresql/data
+      - ./data/pgdata-fa-db:/var/lib/postgresql/data
   
   vault:
     image: vault:1.10.3
     restart: always
     volumes:
-      - ./vault/vault.json:/vault/config/vault.json
-      - ./vault-data:/vault/file
+      - ./data/vault/vault.json:/vault/config/vault.json
+      - ./data/vault-data:/vault/file
     ports:
       - 8200:8200
     environment:
