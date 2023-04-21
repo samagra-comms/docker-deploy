@@ -257,7 +257,7 @@ services:
     image: postgres:9.6
     environment:
       POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
-      POSTGRES_USER: ${FORMS_DB_USERNAME}formsdb
+      POSTGRES_USER: ${FORMS_DB_USERNAME}
       POSTGRES_DB: ${FORMS_DB_NAME}
     ports:
       - "0.0.0.0:5435:5432"
