@@ -44,7 +44,7 @@ services:
     hostname: redis
     volumes:
       - ./data/uci-api-scheduler-db:/data
-      - ./data/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
   uci-transport-socket:
@@ -63,8 +63,8 @@ services:
     restart: always
     image: nginx
     volumes:
-    - ./data/nginx.conf:/etc/nginx/nginx.conf
-    - ./data/uci-web-channel.conf:/etc/nginx/sites-enabled/default
+    - ./nginx.conf:/etc/nginx/nginx.conf
+    - ./uci-web-channel.conf:/etc/nginx/sites-enabled/default
     - ./data/uci-web-channel/build:/usr/site
     # environment:
     #   REACT_APP_TRANSPORT_SOCKET_URL: "ws://localhost:3005"
@@ -102,7 +102,7 @@ services:
     hostname: redis
     volumes:
       - ./data/redis-data:/data
-      - ./data/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # Kafka
   zookeeper:
@@ -127,7 +127,7 @@ services:
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
       KAFKA_LOG_DIRS: ./data00/kafka-logs
     volumes:
-      - ./data/etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
+      - ./etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
       - ./data/var/run/docker.sock:/var/run/docker.sock
       - ./data/data00/kafka:/kafka
       - ./data/kafka-data:/var/lib/kafka:Z
@@ -354,7 +354,7 @@ services:
     ports:
       - 9011:9011
     volumes:
-      - ./data/fa-config:/usr/local/fusionauth/config
+      - ./fa-config:/usr/local/fusionauth/config
       - ./data/kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
@@ -372,7 +372,7 @@ services:
     image: vault:1.10.3
     restart: always
     volumes:
-      - ./data/vault/vault.json:/vault/config/vault.json
+      - ./vault/vault.json:/vault/config/vault.json
       - ./data/vault-data:/vault/file
     ports:
       - 8200:8200
