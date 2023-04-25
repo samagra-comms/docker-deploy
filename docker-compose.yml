@@ -20,8 +20,6 @@ services:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
-    ports:
-      - "5437:5432"
     volumes:
       - pgdata-uci-api-db:/var/lib/postgresql/data
 
@@ -40,8 +38,6 @@ services:
     image: redis:latest
     env_file: .env
     restart: always
-    ports:
-      - "6399:6379"
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
     volumes:
@@ -98,8 +94,6 @@ services:
   cache:
     image: redis:latest
     restart: always
-    ports:
-      - '6388:6379'
     command: ['redis-server', '--appendonly', 'yes']
     hostname: redis
     volumes:
@@ -110,14 +104,10 @@ services:
   zookeeper:
     image: wurstmeister/zookeeper
     restart: always
-    ports:
-      - "2181:2181"
   
   kafka:
     image: wurstmeister/kafka
     restart: always
-    ports:
-      - "9094:9094"
     environment:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://dev.uci.samagra.io:9094
@@ -215,18 +205,10 @@ services:
     image: samagragovernance/cdac-service:4.10.3
     restart: always
     env_file: .env-cdac
-    ports:
-      - 9095:9095
 
   cass:
     image: cassandra:latest
     restart: always
-    ports:
-      - 7000:7000
-      - 7001:7001
-      - 7199:7199
-      - 9041:9042
-      - 9160:9160
     environment:
       - MAX_HEAP_SIZE=1000M
       - HEAP_NEWSIZE=1000M
@@ -261,8 +243,6 @@ services:
       POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
       POSTGRES_USER: ${FORMS_DB_USERNAME}
       POSTGRES_DB: ${FORMS_DB_NAME}
-    ports:
-      - "0.0.0.0:5435:5432"
     volumes:
       - db-data-formsdb:/var/lib/postgresql/data
 
@@ -283,8 +263,6 @@ services:
   aggregate-db:
     restart: always
     image: postgres:9.6-alpine
-    ports:
-      - 5431:5432
     environment:
       - POSTGRES_PASSWORD=${ODK_POSTGRES_PASSWORD}
       - POSTGRES_USER=${ODK_POSTGRES_USER}
@@ -365,8 +343,6 @@ services:
     environment:
       - POSTGRES_USER=${FUSIONAUTH_POSTGRES_USER}
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
-    ports:
-      - "5436:${FUSIONAUTH_POSTGRES_PORT}"
     volumes:
       - ./pgdata-fa-db:/var/lib/postgresql/data
   
@@ -376,8 +352,6 @@ services:
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
       - vault-data:/vault/file
-    ports:
-      - 8200:8200
     environment:
       - VAULT_ADDR=http://0.0.0.0:8200
       - VAULT_API_ADDR=http://0.0.0.0:8200
