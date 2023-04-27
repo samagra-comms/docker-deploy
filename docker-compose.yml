@@ -128,7 +128,7 @@ services:
       KAFKA_LOG_DIRS: ./data00/kafka-logs
     volumes:
       - ./etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
-      - ./data/var/run/docker.sock:/var/run/docker.sock
+      - ./var/run/docker.sock:/var/run/docker.sock
       - ./data/data00/kafka:/kafka
       - ./data/kafka-data:/var/lib/kafka:Z
     links:
@@ -230,7 +230,7 @@ services:
       - HEAP_NEWSIZE=1000M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
     volumes:
-      - ./data/out/cd-new:/var/lib/cassandra
+      - ./data/cd-data:/var/lib/cassandra
     healthcheck:
       test:
         [
@@ -288,7 +288,7 @@ services:
       - POSTGRES_USER=${ODK_POSTGRES_USER}
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
-      - ./data/odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
+      - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
       - ./data/pgdata-odk:/var/lib/postgresql/data
 
   wait_for_db:
@@ -314,7 +314,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./data/odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
+      - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
 
 # Fusion Auth
 
@@ -355,7 +355,7 @@ services:
       - 9011:9011
     volumes:
       - ./fa-config:/usr/local/fusionauth/config
-      - ./data/kickstart:/usr/local/fusionauth/kickstart
+      - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
     image: postgres:12
