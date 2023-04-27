@@ -20,10 +20,8 @@ services:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
-    ports:
-      - "5437:5432"
     volumes:
-      - pgdata-uci-api-db:/var/lib/postgresql/data
+      - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
@@ -33,17 +31,17 @@ services:
       - "15003:8080"
     depends_on:
       - uci-api-db
+    environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET}
 
   uci-api-scheduler-db:
     image: redis:latest
     env_file: .env
     restart: always
-    ports:
-      - "6399:6379"
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
     volumes:
-      - ./uci-api-scheduler-db:/data
+      - ./data/uci-api-scheduler-db:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
@@ -96,26 +94,20 @@ services:
   cache:
     image: redis:latest
     restart: always
-    ports:
-      - '6388:6379'
     command: ['redis-server', '--appendonly', 'yes']
     hostname: redis
     volumes:
-      - ./redis-data:/data
+      - ./data/redis-data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # Kafka
   zookeeper:
     image: wurstmeister/zookeeper
     restart: always
-    ports:
-      - "2181:2181"
   
   kafka:
     image: wurstmeister/kafka
     restart: always
-    ports:
-      - "9094:9094"
     environment:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://dev.uci.samagra.io:9094
@@ -127,10 +119,10 @@ services:
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
       KAFKA_LOG_DIRS: ./data00/kafka-logs
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
-      - ./data00/kafka:/kafka
-      - ./kafka-data:/var/lib/kafka:Z
+      - ./var/run/docker.sock:/var/run/docker.sock
+      - ./data/data00/kafka:/kafka
+      - ./data/kafka-data:/var/lib/kafka:Z
     links:
       - zookeeper
 
@@ -213,24 +205,16 @@ services:
     image: samagragovernance/cdac-service:4.10.3
     restart: always
     env_file: .env-cdac
-    ports:
-      - 9095:9095
 
   cass:
     image: cassandra:latest
     restart: always
-    ports:
-      - 7000:7000
-      - 7001:7001
-      - 7199:7199
-      - 9041:9042
-      - 9160:9160
     environment:
       - MAX_HEAP_SIZE=1000M
       - HEAP_NEWSIZE=1000M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
     volumes:
-      - ./out/cd-new:/var/lib/cassandra
+      - ./data/cd-data:/var/lib/cassandra
     healthcheck:
       test:
         [
@@ -250,7 +234,7 @@ services:
     ports:
       - "127.0.0.1:6389:6379"
     volumes:
-      - redis-data:/data   
+      - ./data/redis-data:/data   
   
   formsdb:
     restart: always
@@ -259,10 +243,8 @@ services:
       POSTGRES_PASSWORD: ${FORMS_DB_PASSWORD}
       POSTGRES_USER: ${FORMS_DB_USERNAME}
       POSTGRES_DB: ${FORMS_DB_NAME}
-    ports:
-      - "0.0.0.0:5435:5432"
     volumes:
-      - db-data-formsdb:/var/lib/postgresql/data
+      - ./data/formsdb-data:/var/lib/postgresql/data
 
   graphql-formsdb:
     restart: always
@@ -275,21 +257,19 @@ services:
       HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:yoursupersecret@formsdb:5432/formsdb
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ADMIN_SECRET: 2OWslm5aAjlTARU
+      HASURA_GRAPHQL_ADMIN_SECRET: ${FORMSDB_HASURA_GRAPHQL_ADMIN_SECRET}
 
 # ODK      
   aggregate-db:
     restart: always
     image: postgres:9.6-alpine
-    ports:
-      - 5431:5432
     environment:
       - POSTGRES_PASSWORD=${ODK_POSTGRES_PASSWORD}
       - POSTGRES_USER=${ODK_POSTGRES_USER}
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
       - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
-      - ./pgdata-odk:/var/lib/postgresql/data
+      - ./data/pgdata-odk:/var/lib/postgresql/data
 
   wait_for_db:
     restart: always
@@ -331,7 +311,7 @@ services:
     #     soft: -1
     #     hard: -1
     volumes:
-      - fa-es-data:/usr/share/elasticsearch/data
+      - ./data/fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
@@ -354,7 +334,7 @@ services:
     ports:
       - 9011:9011
     volumes:
-      - fa-config:/usr/local/fusionauth/config
+      - ./fa-config:/usr/local/fusionauth/config
       - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
@@ -363,19 +343,15 @@ services:
     environment:
       - POSTGRES_USER=${FUSIONAUTH_POSTGRES_USER}
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
-    ports:
-      - "5436:${FUSIONAUTH_POSTGRES_PORT}"
     volumes:
-      - ./pgdata-fa-db:/var/lib/postgresql/data
+      - ./data/pgdata-fa-db:/var/lib/postgresql/data
   
   vault:
     image: vault:1.10.3
     restart: always
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
-      - vault-data:/vault/file
-    ports:
-      - 8200:8200
+      - ./data/vault-data:/vault/file
     environment:
       - VAULT_ADDR=http://0.0.0.0:8200
       - VAULT_API_ADDR=http://0.0.0.0:8200
@@ -383,14 +359,3 @@ services:
     cap_add:
       - IPC_LOCK
     command: vault server -config=/vault/config/vault.json
-
-volumes:
-  db-data-formsdb:
-  db-data-messagedb:
-  kafka-data:
-  redis-data:
-  license.json:
-  fa-es-data:
-  fa-config:
-  pgdata-uci-api-db:
-  vault-data:
