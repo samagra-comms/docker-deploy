@@ -14,7 +14,6 @@ services:
   
   uci-api-db:
     image: postgres:12
-    env_file: .env
     restart: always
     environment:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
@@ -26,7 +25,6 @@ services:
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
     restart: always
-    env_file: .env
     ports:
       - "15003:8080"
     depends_on:
@@ -36,7 +34,6 @@ services:
 
   uci-api-scheduler-db:
     image: redis:latest
-    env_file: .env
     restart: always
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
