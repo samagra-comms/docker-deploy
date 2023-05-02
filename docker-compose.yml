@@ -360,6 +360,14 @@ services:
       - IPC_LOCK
     command: vault server -config=/vault/config/vault.json
 
+  uci-minio:
+    image: quay.io/minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file: env.dev/minio.env
+    command: server /data --console-address ":9001"
+
 volumes:
   db-data-formsdb:
   db-data-messagedb:
