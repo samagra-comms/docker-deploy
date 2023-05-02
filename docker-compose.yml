@@ -8,7 +8,6 @@ services:
     image: federation-service
     restart: always
     env_file: .env
-
     ports:
       - 9999:9999
   
