@@ -3,8 +3,8 @@
     "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
     "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
     "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}",
-    "applicatoinID": "f7d82f07-d34d-4201-98bb-aa8c3ff174b4",
-    "clientsecret" : "+fcXet9Iu2kQi61yWD9Tu4ReZ113P6yEAkr32v6WKOQ="
+    "applicatoinID": "#{ENV.FUSIONAUTH_APPLICATION_ID}",
+    "clientsecret" : "#{ENV.FUSIONAUTH_CLIENT_SECRET}"
   },
   "apiKeys": [
     {
