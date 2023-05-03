@@ -2,7 +2,9 @@
   "variables": {
     "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
     "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
-    "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}"
+    "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}",
+    "applicatoinID": "f7d82f07-d34d-4201-98bb-aa8c3ff174b4",
+    "clientsecret" : "+fcXet9Iu2kQi61yWD9Tu4ReZ113P6yEAkr32v6WKOQ="
   },
   "apiKeys": [
     {
@@ -22,6 +24,66 @@
           "applicationId": "#{FUSIONAUTH_APPLICATION_ID}",
           "roles": [
             "admin"
+          ]
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/application/#{applicatoinID}",
+      "body": {
+        "application": {
+          "name": "MinIO",
+          "oauthConfiguration": {
+            "authorizedRedirectURLs": [
+              "http://minio:9001/oauth_callback"
+            ],
+            "authorizedURLValidationPolicy": "ExactMatch",
+            "clientAuthenticationPolicy": "Required",
+            "clientSecret": "#{clientsecret}",
+            "enabledGrants": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "generateRefreshToken": true,
+            "proofKeyForCodeExchangePolicy": "NotRequired"
+          },
+          "roles": [
+            {
+              "description": "Administrators that have access to everything",
+              "id": "#{UUID()}",
+              "name": "consoleAdmin",
+              "isDefault": false,
+              "isSuperRole": true
+            },
+            {
+              "description": "Administrators that have access to everything",
+              "id": "#{UUID()}",
+              "name": "daignostics",
+              "isDefault": false,
+              "isSuperRole": false
+            },
+            {
+              "description": "Administrators that have access to everything",
+              "id": "#{UUID()}",
+              "name": "readonly",
+              "isDefault": true,
+              "isSuperRole": false
+            },
+            {
+              "description": "Administrators that have access to everything",
+              "id": "#{UUID()}",
+              "name": "readwrite",
+              "isDefault": false,
+              "isSuperRole": false
+            },
+            {
+              "description": "Administrators that have access to everything",
+              "id": "#{UUID()}",
+              "name": "writeonly",
+              "isDefault": false,
+              "isSuperRole": false
+            }
           ]
         }
       }
