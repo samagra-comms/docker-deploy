@@ -231,9 +231,6 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
-    ports:
-      - 7000:7000
-      - 9042:9042
 
   redis:
     restart: always
