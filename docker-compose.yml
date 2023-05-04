@@ -207,12 +207,16 @@ services:
     env_file: .env-cdac
 
   cass:
-    image: cassandra:latest
+    image: bitnami/cassandra:latest
     restart: always
     environment:
       - MAX_HEAP_SIZE=1000M
       - HEAP_NEWSIZE=1000M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
+      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_PASSWORD_SEEDER=yes      
+      - CASSANDRA_USER=${CASSANDRA_USER}
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
     volumes:
       - ./out/cd-new:/var/lib/cassandra
     healthcheck:
@@ -227,6 +231,9 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
+    ports:
+      - 7000:7000
+      - 9042:9042
 
   redis:
     restart: always
