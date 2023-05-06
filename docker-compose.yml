@@ -213,10 +213,11 @@ services:
       - MAX_HEAP_SIZE=1000M
       - HEAP_NEWSIZE=1000M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
-      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_SEEDS=cass
       - CASSANDRA_PASSWORD_SEEDER=yes      
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+      - CASSANDRA_HOST=cass
     volumes:
       - ./out/cd-new:/var/lib/cassandra
     healthcheck:
