@@ -227,14 +227,6 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
-
-  redis:
-    restart: always
-    image: "redis:alpine"
-    ports:
-      - "127.0.0.1:6389:6379"
-    volumes:
-      - ./data/redis-data:/data   
   
   formsdb:
     restart: always
@@ -318,6 +310,7 @@ services:
     restart: always
     depends_on:
       - fa-search
+      - fa-db
     environment:
       DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
       DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
@@ -331,6 +324,8 @@ services:
       FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
       FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
       FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
+      FUSIONAUTH_APPLICATION_ID: ${FUSIONAUTH_APPLICATION_ID}
+      FUSIONAUTH_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
     ports:
       - 9011:9011
     volumes:
@@ -359,3 +354,16 @@ services:
     cap_add:
       - IPC_LOCK
     command: vault server -config=/vault/config/vault.json
+
+  uci-minio:
+    image: quay.io/minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file: env.dev/minio.env
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_IDENTITY_OPENID_CLIENT_ID: ${FUSIONAUTH_APPLICATION_ID}
+      MINIO_IDENTITY_OPENID_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
+    depends_on:
+      - fusionauth
