@@ -356,6 +356,8 @@ services:
     cap_add:
       - IPC_LOCK
     command: vault server -config=/vault/config/vault.json
+    ports:
+      - 8200:8200
 
 volumes:
   db-data-formsdb:
