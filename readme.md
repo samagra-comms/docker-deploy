@@ -28,7 +28,7 @@ Any user/ organization that wants to use setup UCI on their own server.
 
 # Manual Setup - one-click deployment is WIP
 
-- Setup a minio + FusionAuth setup following this guide -> https://github.com/Samagra-Development/minio-oauth2-docs. This part will be automated in future versions, but it is manual for now. 
+- Once all the containers are up, you will notice that there will be an minio-fusionauth setup out of the box. Go to minio console at port 9001, navigate to Identity -> Open ID, click on edit and turn `Claim User Info` on.
 
 - Populate the .env file with minio and fusionauth secrets after setup. 
 

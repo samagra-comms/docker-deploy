@@ -120,6 +120,11 @@ if [[ ! -e  uci-apis ]]; then
     echo ""
 fi
 
+echo "Please provide github token (Which has read access to packages)"
+read GITHUB_TOKEN
+
+sed -i "s|//npm.pkg.github.com/:_authToken=.*|//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}|g" ./uci-apis/v2/uci/.npmrc
+
 SYSTEM_IP=`ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
 
 if [[ ! -e uci-web-channel ]]; then
