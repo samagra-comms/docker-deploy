@@ -28,11 +28,12 @@ Any user/ organization that wants to use setup UCI on their own server.
 
 # Manual Setup - one-click deployment is WIP
 
-- Once all the containers are up, you will notice that there will be an minio-fusionauth setup out of the box. Go to minio console at port 9001, navigate to Identity -> Open ID, click on edit and turn `Claim User Info` on.
-
-- Populate the .env file with minio and fusionauth secrets after setup. 
+- Add the desired version of uci-apis which you want to use to `.env`.
 
 - Run `setup-manual.sh` and follow the prompts.
+
+- Once all the containers are up, you will notice that there will be an minio-fusionauth setup out of the box. Go to minio console at port 9001, navigate to Identity -> Open ID, click on edit and turn `Claim User Info` on.
+(In server deployments, it is necessary to expose the fusionauth service on a specific port. It is recommended to associate a domain name with this service. Subsequently, you should update the `MINIO_IDENTITY_OPENID_CONFIG_URL` configuration setting by replacing `fusionauth` with either the server's IP address along with the designated port or the domain name you have directed it to.)
 
 - ODK's default password is not picked on runtime, if you are using something other than default password, you have to manually reset the password for administrator user. 
 
@@ -48,9 +49,9 @@ Any user/ organization that wants to use setup UCI on their own server.
 
 - On the first run cassandra migrations are applied. If you see any migration error then set it to `0` to run all migrations if not already applied, else set to `6` if all migrations are applied. In most cases after the first run, setting the `migrations count` in `.env` to `6` will work. Migrations get applied from `0` to `6` in a sequential manner. 
 
-- **NOTE**: You can restart the services by using docker-compose commands
-
-
+- **NOTE**: 
+    - You can restart the services by using docker-compose commands
+    - It is a good practice to modify the volume mounts within the docker-compose file to ensure that all data is mounted on a disk that is entirely separate from the operating system (OS) disk.
 ## Docker Setup Steps
 
 ### **Cloning and Run**
