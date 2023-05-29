@@ -139,8 +139,8 @@ services:
     depends_on:
       - zookeeper
     volumes:
-      - ./kafka-data-1:/kafka
-      - ./kafka-data-2:/var/lib/kafka:Z
+      - ./data/kafka-data-1:/kafka
+      - ./data/kafka-data-2:/var/lib/kafka:Z
     restart: always
 
   schema-registry:
