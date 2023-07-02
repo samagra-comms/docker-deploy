@@ -3,7 +3,7 @@
 !.env
 !docker-compose.yml
 !install.sh
-!installv2.sh
+!install.gitpod.sh
 !*.md
 !.gitpod.yml
 !etc/*
@@ -18,10 +18,7 @@
 !uci-web-channel.conf
 !.env-uci-web-channel
 !.env-uci-admin
-!install.gitprod.sh
-!installv2.gitpod.sh
 !docker-compose-debug.yml
 !vault/vault.json
 !vault
-!setup-manual.sh
 !INSTALL.md
