@@ -21,7 +21,7 @@ services:
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
     volumes:
-      - pgdata-uci-api-db:/var/lib/postgresql/data
+      - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
@@ -41,7 +41,7 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
     volumes:
-      - ./uci-api-scheduler-db:/data
+      - ./data/uci-api-scheduler-db:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
@@ -97,34 +97,51 @@ services:
     command: ['redis-server', '--appendonly', 'yes']
     hostname: redis
     volumes:
-      - ./redis-data:/data
+      - ./data/redis-data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # Kafka
+
   zookeeper:
-    image: wurstmeister/zookeeper
-    restart: always
-  
-  kafka:
-    image: wurstmeister/kafka
-    restart: always
+    image: confluentinc/cp-zookeeper:7.3.2
+    # ports:
+    #   - "2181:2181"
     environment:
-      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://dev.uci.samagra.io:9094
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:SASL_PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    restart: always
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "9998:9999"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LOG_DIRS: ./data00/kafka-logs
+      # KAFKA_BROKER_ID: 1
+      # KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
-      KAFKA_LOG_DIRS: ./data00/kafka-logs
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./etc/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
-      - ./data00/kafka:/kafka
-      - ./kafka-data:/var/lib/kafka:Z
-    links:
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+    depends_on:
       - zookeeper
+    volumes:
+      - ./data/kafka-data-1:/kafka
+      - ./data/kafka-data-2:/var/lib/kafka:Z
+    restart: always
 
   schema-registry:
     image: confluentinc/cp-schema-registry
@@ -219,7 +236,7 @@ services:
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
       - CASSANDRA_HOST=cass
     volumes:
-      - ./out/cd-new:/var/lib/cassandra
+      - ./data/cd-data:/var/lib/cassandra
     healthcheck:
       test:
         [
@@ -241,7 +258,7 @@ services:
       POSTGRES_USER: ${FORMS_DB_USERNAME}
       POSTGRES_DB: ${FORMS_DB_NAME}
     volumes:
-      - db-data-formsdb:/var/lib/postgresql/data
+      - ./data/formsdb-data:/var/lib/postgresql/data
 
   graphql-formsdb:
     restart: always
@@ -266,7 +283,7 @@ services:
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
       - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
-      - ./pgdata-odk:/var/lib/postgresql/data
+      - ./data/pgdata-odk:/var/lib/postgresql/data
 
   wait_for_db:
     restart: always
@@ -308,13 +325,14 @@ services:
     #     soft: -1
     #     hard: -1
     volumes:
-      - fa-es-data:/usr/share/elasticsearch/data
+      - ./data/fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
     restart: always
     depends_on:
       - fa-search
+      - fa-db
     environment:
       DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
       DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
@@ -328,10 +346,12 @@ services:
       FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
       FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
       FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
+      FUSIONAUTH_APPLICATION_ID: ${FUSIONAUTH_APPLICATION_ID}
+      FUSIONAUTH_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
     ports:
       - 9011:9011
     volumes:
-      - fa-config:/usr/local/fusionauth/config
+      - ./fa-config:/usr/local/fusionauth/config
       - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
@@ -341,14 +361,14 @@ services:
       - POSTGRES_USER=${FUSIONAUTH_POSTGRES_USER}
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
     volumes:
-      - ./pgdata-fa-db:/var/lib/postgresql/data
+      - ./data/pgdata-fa-db:/var/lib/postgresql/data
   
   vault:
     image: vault:1.10.3
     restart: always
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
-      - vault-data:/vault/file
+      - ./data/vault-data:/vault/file
     environment:
       - VAULT_ADDR=http://0.0.0.0:8200
       - VAULT_API_ADDR=http://0.0.0.0:8200
@@ -359,13 +379,15 @@ services:
     ports:
       - 8200:8200
 
-volumes:
-  db-data-formsdb:
-  db-data-messagedb:
-  kafka-data:
-  redis-data:
-  license.json:
-  fa-es-data:
-  fa-config:
-  pgdata-uci-api-db:
-  vault-data:
+  uci-minio:
+    image: quay.io/minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file: env.dev/minio.env
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_IDENTITY_OPENID_CLIENT_ID: ${FUSIONAUTH_APPLICATION_ID}
+      MINIO_IDENTITY_OPENID_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
+    depends_on:
+      - fusionauth
