@@ -2,15 +2,14 @@ version: "3"
 
 services:
 # UCI API
-  uci-api-service:
-    build: 
-      context: ./uci-apis/v2/uci
-    image: federation-service
-    restart: always
-    env_file: .env
-
-    ports:
-      - 9999:9999
+  # uci-api-service:
+  #   build: 
+  #     context: ./uci-apis/v2/uci
+  #   image: federation-service
+  #   restart: always
+  #   env_file: .env
+  #   ports:
+  #     - 9999:9999
   
   uci-api-db:
     image: postgres:12
@@ -22,6 +21,7 @@ services:
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
+      - ./uci-db-backup.sql:/docker-entrypoint-initdb.d/uci-db-backup.sql
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.0.0-alpha.1
@@ -69,26 +69,26 @@ services:
     ports:
     - "9098:80"
 
-  uci-admin:
-    restart: always
-    build: 
-      context: uci-admin
-      args:
-        NG_APP_url: ${NG_APP_url}
-        NG_APP_nl_url: ${NG_APP_nl_url}
-        NG_APP_nl_login_url: ${NG_APP_nl_login_url}
-        NG_APP_nl_login_token: ${NG_APP_nl_login_token}
-        NG_APP_nl_application_id: ${NG_APP_nl_application_id}
-        NG_APP_blobUrl: ${NG_APP_blobUrl}
-        NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
-        NG_APP_adapterId: ${NG_APP_adapterId}
-        NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
-        NG_APP_userId: ${NG_APP_userId}
-        NG_APP_orgId: ${NG_APP_orgId}
-        NG_APP_token: ${NG_APP_token}
-    image: uci-admin
-    ports:
-    - "9097:80"
+  # uci-admin:
+  #   restart: always
+  #   build: 
+  #     context: uci-admin
+  #     args:
+  #       NG_APP_url: ${NG_APP_url}
+  #       NG_APP_nl_url: ${NG_APP_nl_url}
+  #       NG_APP_nl_login_url: ${NG_APP_nl_login_url}
+  #       NG_APP_nl_login_token: ${NG_APP_nl_login_token}
+  #       NG_APP_nl_application_id: ${NG_APP_nl_application_id}
+  #       NG_APP_blobUrl: ${NG_APP_blobUrl}
+  #       NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
+  #       NG_APP_adapterId: ${NG_APP_adapterId}
+  #       NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
+  #       NG_APP_userId: ${NG_APP_userId}
+  #       NG_APP_orgId: ${NG_APP_orgId}
+  #       NG_APP_token: ${NG_APP_token}
+  #   image: uci-admin
+  #   ports:
+  #   - "9097:80"
 
 
   cache:
@@ -259,6 +259,7 @@ services:
       POSTGRES_DB: ${FORMS_DB_NAME}
     volumes:
       - ./data/formsdb-data:/var/lib/postgresql/data
+      - ./init_scripts/forms-db.sql:/docker-entrypoint-initdb.d
 
   graphql-formsdb:
     restart: always
@@ -282,7 +283,8 @@ services:
       - POSTGRES_USER=${ODK_POSTGRES_USER}
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
-      - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
+      # - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
+      - ./init_scripts/aggregate-db.sql:/docker-entrypoint-initdb.d
       - ./data/pgdata-odk:/var/lib/postgresql/data
 
   wait_for_db:
@@ -362,6 +364,7 @@ services:
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
     volumes:
       - ./data/pgdata-fa-db:/var/lib/postgresql/data
+      - ./init_scripts/fa-db.sql:/docker-entrypoint-initdb.d
   
   vault:
     image: vault:1.10.3
