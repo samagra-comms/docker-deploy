@@ -3,9 +3,7 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    build: 
-      context: ./uci-apis/
-    image: federation-service
+    image: samagragovernance/uci-apis:v2.3.0
     restart: always
     env_file: .env
 
