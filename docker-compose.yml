@@ -2,14 +2,14 @@ version: "3"
 
 services:
 # UCI API
-  # uci-api-service:
-  #   build: 
-  #     context: ./uci-apis/v2/uci
-  #   image: federation-service
-  #   restart: always
-  #   env_file: .env
-  #   ports:
-  #     - 9999:9999
+  uci-api-service:
+    build: 
+      context: ./uci-apis/v2/uci
+    image: federation-service
+    restart: always
+    env_file: .env
+    ports:
+      - 9999:9999
   
   uci-api-db:
     image: postgres:12
@@ -69,26 +69,26 @@ services:
     ports:
     - "9098:80"
 
-  # uci-admin:
-  #   restart: always
-  #   build: 
-  #     context: uci-admin
-  #     args:
-  #       NG_APP_url: ${NG_APP_url}
-  #       NG_APP_nl_url: ${NG_APP_nl_url}
-  #       NG_APP_nl_login_url: ${NG_APP_nl_login_url}
-  #       NG_APP_nl_login_token: ${NG_APP_nl_login_token}
-  #       NG_APP_nl_application_id: ${NG_APP_nl_application_id}
-  #       NG_APP_blobUrl: ${NG_APP_blobUrl}
-  #       NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
-  #       NG_APP_adapterId: ${NG_APP_adapterId}
-  #       NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
-  #       NG_APP_userId: ${NG_APP_userId}
-  #       NG_APP_orgId: ${NG_APP_orgId}
-  #       NG_APP_token: ${NG_APP_token}
-  #   image: uci-admin
-  #   ports:
-  #   - "9097:80"
+  uci-admin:
+    restart: always
+    build: 
+      context: uci-admin
+      args:
+        NG_APP_url: ${NG_APP_url}
+        NG_APP_nl_url: ${NG_APP_nl_url}
+        NG_APP_nl_login_url: ${NG_APP_nl_login_url}
+        NG_APP_nl_login_token: ${NG_APP_nl_login_token}
+        NG_APP_nl_application_id: ${NG_APP_nl_application_id}
+        NG_APP_blobUrl: ${NG_APP_blobUrl}
+        NG_APP_botPhoneNumber: ${NG_APP_botPhoneNumber}
+        NG_APP_adapterId: ${NG_APP_adapterId}
+        NG_APP_broadcastAdapterId: ${NG_APP_broadcastAdapterId}
+        NG_APP_userId: ${NG_APP_userId}
+        NG_APP_orgId: ${NG_APP_orgId}
+        NG_APP_token: ${NG_APP_token}
+    image: uci-admin
+    ports:
+    - "9097:80"
 
 
   cache:
