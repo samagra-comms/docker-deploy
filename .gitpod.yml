@@ -1,6 +1,6 @@
 tasks:
   - name: UCI Server
-    init: bash ./installv2.gitpod.sh
+    init: bash ./install.gitpod.sh
 
 ports:
   - port: 18080 # Kafka UI
