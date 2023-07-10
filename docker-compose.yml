@@ -3,9 +3,7 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    build: 
-      context: ./uci-apis/v2/uci
-    image: federation-service
+    image: samagragovernance/uci-apis:v2.3.0
     restart: always
     env_file: .env
 
@@ -72,7 +70,7 @@ services:
   uci-admin:
     restart: always
     build: 
-      context: uci-admin
+      context: ./uci-admin/
       args:
         NG_APP_url: ${NG_APP_url}
         NG_APP_nl_url: ${NG_APP_nl_url}
