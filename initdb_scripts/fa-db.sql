@@ -7,31 +7,13 @@ SET default_transaction_read_only = off;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 
---
--- Drop databases (except postgres and template1)
---
-
-DROP DATABASE fusionauth;
-
-
-
 
 --
 -- Drop roles
 --
 
-DROP ROLE fusionauth;
-DROP ROLE postgres;
-
-
---
--- Roles
---
-
 CREATE ROLE fusionauth;
 ALTER ROLE fusionauth WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'md5e8eca98d5417ea8bd2e55de8c749f1ca';
-CREATE ROLE postgres;
-ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD 'md536c34d791b83dee7ea99d55f28be0387';
 
 
 

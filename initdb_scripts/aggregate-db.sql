@@ -11,23 +11,23 @@ SET standard_conforming_strings = on;
 -- Drop databases
 --
 
-DROP DATABASE aggregate;
+-- DROP DATABASE aggregate;
 
 
 
 
---
--- Drop roles
---
+-- --
+-- -- Drop roles
+-- --
 
-DROP ROLE aggregate;
+-- DROP ROLE aggregate;
 
 
---
--- Roles
---
+-- --
+-- -- Roles
+-- --
 
-CREATE ROLE aggregate;
+-- CREATE ROLE aggregate;
 ALTER ROLE aggregate WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD 'md56a0ee36e97c889067882f51cfd5d1a47';
 
 
@@ -39,9 +39,9 @@ ALTER ROLE aggregate WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATIO
 -- Database creation
 --
 
-CREATE DATABASE aggregate WITH TEMPLATE = template0 OWNER = aggregate;
-REVOKE CONNECT,TEMPORARY ON DATABASE template1 FROM PUBLIC;
-GRANT CONNECT ON DATABASE template1 TO PUBLIC;
+-- CREATE DATABASE aggregate WITH TEMPLATE = template0 OWNER = aggregate;
+-- REVOKE CONNECT,TEMPORARY ON DATABASE template1 FROM PUBLIC;
+-- GRANT CONNECT ON DATABASE template1 TO PUBLIC;
 
 
 \connect aggregate

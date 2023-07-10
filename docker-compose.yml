@@ -21,10 +21,11 @@ services:
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
-      - ./uci-db-backup.sql:/docker-entrypoint-initdb.d/uci-db-backup.sql
+      # correctly seeded
+      # - ./initdb_scripts/uci-db-backup.sql:/docker-entrypoint-initdb.d/uci-db-backup.sql
 
   uci-api-db-gql:
-    image: hasura/graphql-engine:v2.0.0-alpha.1
+    image: hasura/graphql-engine:v2.7.0
     restart: always
     env_file: .env
     ports:
@@ -259,7 +260,7 @@ services:
       POSTGRES_DB: ${FORMS_DB_NAME}
     volumes:
       - ./data/formsdb-data:/var/lib/postgresql/data
-      - ./init_scripts/forms-db.sql:/docker-entrypoint-initdb.d
+      # - ./init_scripts/forms-db.sql:/docker-entrypoint-initdb.d/forms-db.sql
 
   graphql-formsdb:
     restart: always
@@ -284,8 +285,8 @@ services:
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
       # - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
-      - ./init_scripts/aggregate-db.sql:/docker-entrypoint-initdb.d
       - ./data/pgdata-odk:/var/lib/postgresql/data
+      - ./initdb_scripts/aggregate-db.sql:/docker-entrypoint-initdb.d/init.sql
 
   wait_for_db:
     restart: always
@@ -315,7 +316,6 @@ services:
 # Fusion Auth
 
   fa-search:
-    restart: always
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
     environment:
       - cluster.name=fusionauth
@@ -364,7 +364,7 @@ services:
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
     volumes:
       - ./data/pgdata-fa-db:/var/lib/postgresql/data
-      - ./init_scripts/fa-db.sql:/docker-entrypoint-initdb.d
+      # - ./initdb_scripts/fa-db.sql:/docker-entrypoint-initdb.d/fa-db.sql
   
   vault:
     image: vault:1.10.3
