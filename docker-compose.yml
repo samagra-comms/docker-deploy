@@ -3,13 +3,12 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    build: 
-      context: ./uci-apis/
-    image: federation-service
+    # image: samagragovernance/uci-apis:develop
+    build: ./uci-apis
     restart: always
     env_file: .env
     ports:
-      - 9999:9999
+      - 9999:3002
   
   uci-api-db:
     image: postgres:12
@@ -19,10 +18,10 @@ services:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
+    # command: ["sh", "-c", "sleep 60 && docker-entrypoint.sh postgres && psql -U ${UCI_API_POSTGRES_USER} -d ${UCI_API_POSTGRES_DB} -f /docker-entrypoint-initdb.d/initdb_script.sql"]      
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
-      # correctly seeded
-      # - ./initdb_scripts/uci-db-backup.sql:/docker-entrypoint-initdb.d/uci-db-backup.sql
+      # - ./pgdata.sql:/docker-entrypoint-initdb.d/initdb_script.sql
 
   uci-api-db-gql:
     image: hasura/graphql-engine:v2.7.0
@@ -225,31 +224,24 @@ services:
     env_file: .env-cdac
 
   cass:
-    image: bitnami/cassandra:latest
-    restart: always
+    image: cassandra:latest
+    hostname: cass
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 7199:7199
+      - 9041:9042
+      - 9160:9160
     environment:
-      - MAX_HEAP_SIZE=1000M
-      - HEAP_NEWSIZE=1000M
+      - JVM_OPTS=-Xmx8G -Xms1G -Xss512k
+      - MAX_HEAP_SIZE=8092M
+      - HEAP_NEWSIZE=8092M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
-      - CASSANDRA_SEEDS=cass
-      - CASSANDRA_PASSWORD_SEEDER=yes      
-      - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-      - CASSANDRA_HOST=cass
+    restart: always
     volumes:
-      - ./data/cd-data:/var/lib/cassandra
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "cqlsh",
-          "-u cassandra",
-          "-p cassandra",
-          "-e describe keyspaces",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
+      - ./out/cd-new:/var/lib/cassandra
+      - ./cassandra-config/cassandra.yaml:/opt/cassandra/conf/cassandra.yaml
   
   formsdb:
     restart: always

@@ -25,3 +25,4 @@
 !INSTALL.md
 !initdb_scripts/*
 uci-db-backup.sql
+!install.py
