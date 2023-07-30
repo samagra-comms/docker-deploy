@@ -432,10 +432,10 @@ def create_bot_with_curl(conversation_logic_id):
     # JSON data containing the conversation_logic_id
     data = {
         "data": {
-            "name": "TEST ODK BOT333363",
-            "description": "TEST",
-            "purpose": "TEST",
-            "startingMessage": "Hi Test OD33333333",
+            "name": "Sample Conversation Bot",
+            "description": "Sample",
+            "purpose": "Sample",
+            "startingMessage": "Hey",
             "startDate": "2023-06-16",
             "endDate": "2023-06-30",
             "isBroadcastBotEnabled": True,
