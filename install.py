@@ -8,7 +8,6 @@ import json
 import argparse
 import git
 import socket
-import docker
 from time import sleep
 
 # ANSI color escape sequences
@@ -292,16 +291,62 @@ def build_and_setup_uci_admin():
     print()
 
 
-def run_docker_compose_services():
-    print_stage_message("Running Docker Compose services")
+def run_fusionauth_services():
+    print_stage_message("Building ElasticSearch and FusionAuth containers. This may take a few minutes.")
 
     try:
-        services_to_start = ["fa-search", "fusionauth", "fa-db", "cass", "kafka", "schema-registry", "zookeeper", "connect", "aggregate-db", "wait_for_db", "aggregate-server"]
+        services_to_start = ["fa-search","fusionauth","fa-db"]
 
         for service in services_to_start:
             print(f"Starting '{service}' service...")
             subprocess.run(["docker-compose", "up", "-d", service], check=True)
-            subprocess.run(["docker-compose", "up", "-d"], check=True)
+
+        print("All services are up")
+        print()
+
+    except subprocess.CalledProcessError as e:
+        print_error_message(f"Error while running Docker Compose services: {e}")
+        sys.exit(1)
+        
+def run_odk_services():
+    print_stage_message("Setting up ODK components. This may take a few minutes.")
+
+    try:
+        services_to_start = ["aggregate-db","wait_for_db","aggregate-server"]
+
+        for service in services_to_start:
+            print(f"Starting '{service}' service...")
+            subprocess.run(["docker-compose", "up", "-d", service], check=True)
+
+        print("All services are up")
+        print()
+
+    except subprocess.CalledProcessError as e:
+        print_error_message(f"Error while running Docker Compose services: {e}")
+        sys.exit(1)
+        
+def run_docker_services():
+    print_stage_message("Setting up ODK components. This may take a few minutes.")
+
+    try:
+        subprocess.run(["docker-compose", "up", "-d"], check=True)
+
+        print("All services are up")
+        print()
+
+    except subprocess.CalledProcessError as e:
+        print_error_message(f"Error while running Docker Compose services: {e}")
+        sys.exit(1)
+        
+def run_kafka_services():
+    print_stage_message("Setting up Kafka components. This may take a few minutes.")
+
+    try:
+        services_to_start = ["cass","kafka","schema-registry","zookeeper","connect"]
+
+        for service in services_to_start:
+            print(f"Starting '{service}' service...")
+            subprocess.run(["docker-compose", "up", "-d", service], check=True)
 
         print("All services are up")
         print()
@@ -462,59 +507,61 @@ def main():
     print("****************************************************")
     print("\n\n\n")
 
-    # # Ensure .bashrc exists and is writable
-    # os.system("touch ~/.bashrc")
+    # Ensure .bashrc exists and is writable
+    os.system("touch ~/.bashrc")
 
-    # # Stage 1: Node.js setup
-    # print_stage_message("Stage 1: Node.js setup")
+    # Stage 1: Node.js setup
+    print_stage_message("Stage 1: Node.js setup")
 
-    # install_node_version_manager()
-    # install_nodejs()
-    # install_yarn()
-    # add_yarn_to_path()
+    install_node_version_manager()
+    install_nodejs()
+    install_yarn()
+    add_yarn_to_path()
 
-    # # Stage 2: Exporting keys and environment variables
-    # print_stage_message("Stage 2: Exporting keys and environment variables")
+    # Stage 2: Exporting keys and environment variables
+    print_stage_message("Stage 2: Exporting keys and environment variables")
 
-    # export_keys(args)
+    export_keys(args)
     
-    # get_system_ip()
+    get_system_ip()
 
-    # # # Stage 3: Docker setup
-    # print_stage_message("Stage 3: Docker setup")
+    # # Stage 3: Docker setup
+    print_stage_message("Stage 3: Docker setup")
 
-    # check_and_install_docker()
-    # check_and_install_docker_compose()
+    check_and_install_docker()
+    check_and_install_docker_compose()
 
-    # # Stage 4: Cloning repositories
-    # print_stage_message("Stage 4: Cloning repositories")
+    # Stage 4: Cloning repositories
+    print_stage_message("Stage 4: Cloning repositories")
 
-    # clone_odk_repository()
-    # clone_uci_apis_repository()
+    clone_odk_repository()
+    clone_uci_apis_repository()
 
-    # # Stage 5: Building and setting up UCI Web Channel
-    # print_stage_message("Stage 5: Building and setting up UCI Web Channel")
+    # Stage 5: Building and setting up UCI Web Channel
+    print_stage_message("Stage 5: Building and setting up UCI Web Channel")
 
-    # build_and_setup_uci_web_channel()
+    build_and_setup_uci_web_channel()
 
-    # # Stage 6: Building and setting up UCI Admin
-    # print_stage_message("Stage 6: Building and setting up UCI Admin")
+    # Stage 6: Building and setting up UCI Admin
+    print_stage_message("Stage 6: Building and setting up UCI Admin")
 
-    # build_and_setup_uci_admin()
+    build_and_setup_uci_admin()
 
-    # # Stage 7: Running Docker Compose services
-    # print_stage_message("Stage 7: Running Docker Compose services")
+    # Stage 7: Running Docker Compose services
+    print_stage_message("Stage 7: Running Docker Compose services")
 
-    # run_docker_compose_services()
-    # # Additional steps after installation...
+    run_fusionauth_services()
+    run_kafka_services()
+    run_odk_services()
+    run_docker_services()
+    # Additional steps after installation...
     
     sleep(120)
 
     admin_token = "dR67yAkMAqW5P9xk6DDJnfn6KbD4EJFVpmPEjuZMq44jJGcj65"
     path_to_xml = "./media/List-QRB-Test-Bot.xml"
         
-    # form_id = upload_form(admin_token, path_to_xml)
-    form_id = 123456
+    form_id = upload_form(admin_token, path_to_xml)
     # form_id = 123456789
     print(f"Form ID: {form_id}")
 
