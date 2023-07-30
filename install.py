@@ -4,13 +4,20 @@ import sys
 import shutil
 import time
 import requests
-import shlex
 import json
+import argparse
+import git
+import socket
+import docker
+from time import sleep
 
 # ANSI color escape sequences
 green = "\033[0;32m"
 red = "\033[0;31m"
 reset = "\033[0m"
+INSTALL_NODE_VER = "16.14.0"
+INSTALL_NVM_VER = "0.39.1"
+INSTALL_YARN_VER = "1.22.17"
 
 def get_status(service_name):
     print(f"Checking status of '{service_name}' container...")
@@ -42,11 +49,12 @@ def print_stage_message(stage_name):
 
 def run_command(command):
     try:
-        subprocess.run(command, check=True)
+        cmd_str = " ".join(command)  # Join the list elements into a single string
+        print("command to be executed:", cmd_str)
+        subprocess.run(f"bash -i -c '{cmd_str}'", shell=True, check=True)
     except subprocess.CalledProcessError as e:
         print_error_message(str(e))
         sys.exit(1)
-
 
 def install_node_version_manager():
     print_stage_message("Installing Node Version Manager (NVM)")
@@ -55,7 +63,13 @@ def install_node_version_manager():
     shutil.rmtree(os.path.expanduser("~/.nvm"), ignore_errors=True)
 
     # Install NVM
-    run_command(["curl", "-o-", f"https://raw.githubusercontent.com/creationix/nvm/v{INSTALL_NVM_VER}/install.sh", "|", "bash"])
+    command = f"curl -o- https://raw.githubusercontent.com/creationix/nvm/v{INSTALL_NVM_VER}/install.sh | bash"
+
+    try:
+        subprocess.run(command, shell=True, check=True)
+        print("Command executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Command execution failed with error: {e}")    
     # Make nvm command available to terminal
     os.system("source ~/.nvm/nvm.sh")
 
@@ -85,26 +99,38 @@ def add_yarn_to_path():
     os.environ["PATH"] = f"$HOME/.yarn/bin:{os.environ['PATH']}"
     run_command(["yarn", "config", "set", "prefix", "~/.yarn", "-g"])
 
+def export_keys(args):
+    global ENCRYPTION_KEY, NETCORE_WHATSAPP_AUTH_TOKEN, NETCORE_WHATSAPP_SOURCE, NETCORE_WHATSAPP_URI
 
-def export_keys():
     print_stage_message("Exporting keys required for installation")
 
     # Export keys required for installation
-    encryption_key = input("Please provide the Encryption Key (If you don't have it, please contact the administrator): ")
-    if not encryption_key:
+    ENCRYPTION_KEY = args.encryption_key if args.encryption_key else 'None'
+    if not ENCRYPTION_KEY:
         print_error_message("ENCRYPTION_KEY is empty. Please contact the administrator.")
         sys.exit(1)
-    netcore_whatsapp_auth_token = input("Please provide the Netcore Whatsapp Auth Token (If you don't have it, press Enter to continue): ")
-    netcore_whatsapp_source = input("Please provide the Netcore Whatsapp Source (If you don't have it, press Enter to continue): ")
-    netcore_whatsapp_uri = input("Please provide the Netcore Whatsapp URI (If you don't have it, press Enter to continue): ")
+
+    NETCORE_WHATSAPP_AUTH_TOKEN = args.netcore_whatsapp_auth_token if args.netcore_whatsapp_auth_token else 'None'
+    NETCORE_WHATSAPP_SOURCE = args.netcore_whatsapp_source if args.netcore_whatsapp_source else 'None'
+    NETCORE_WHATSAPP_URI = args.netcore_whatsapp_uri if args.netcore_whatsapp_uri else 'None'
+
     print()
 
     # Export environment variables
-    run_command(["sed", "-i", f"s|NETCORE_WHATSAPP_AUTH_TOKEN=.*|NETCORE_WHATSAPP_AUTH_TOKEN={netcore_whatsapp_auth_token}|g", ".env"])
-    run_command(["sed", "-i", f"s|NETCORE_WHATSAPP_SOURCE=.*|NETCORE_WHATSAPP_SOURCE={netcore_whatsapp_source}|g", ".env"])
-    run_command(["sed", "-i", f"s|NETCORE_WHATSAPP_URI=.*|NETCORE_WHATSAPP_URI={netcore_whatsapp_uri}|g", ".env"])
-    run_command(["sed", "-i", f"s|ENCRYPTION_KEY=.*|ENCRYPTION_KEY={encryption_key}|g", ".env"])
+    with open('.env', 'r') as file:
+        env_lines = file.readlines()
 
+    with open('.env', 'w') as file:
+        for line in env_lines:
+            if line.startswith('NETCORE_WHATSAPP_AUTH_TOKEN='):
+                line = f'NETCORE_WHATSAPP_AUTH_TOKEN={NETCORE_WHATSAPP_AUTH_TOKEN}\n'
+            elif line.startswith('NETCORE_WHATSAPP_SOURCE='):
+                line = f'NETCORE_WHATSAPP_SOURCE={NETCORE_WHATSAPP_SOURCE}\n'
+            elif line.startswith('NETCORE_WHATSAPP_URI='):
+                line = f'NETCORE_WHATSAPP_URI={NETCORE_WHATSAPP_URI}\n'
+            elif line.startswith('ENCRYPTION_KEY='):
+                line = f'ENCRYPTION_KEY={ENCRYPTION_KEY}\n'
+            file.write(line)
 
 def check_and_install_docker():
     print_stage_message("Checking and installing Docker")
@@ -150,12 +176,14 @@ def clone_odk_repository():
         print()
         return
 
-    os.makedirs("odk-aggregate")
-    os.chdir("odk-aggregate")
-    run_command(["git", "clone", "-b", "release-4.4.0", "https://github.com/samagra-comms/odk.git"])
-    os.chdir("..")
-    print("ODK repository clone complete.")
-    print()
+    # Clone the ODK repository using GitPython
+    try:
+        git.Repo.clone_from("https://github.com/samagra-comms/odk.git", "odk-aggregate", branch="release-4.4.0")
+        print("ODK repository clone complete.")
+        print()
+    except git.exc.GitCommandError as e:
+        print_error_message(f"Error while cloning ODK repository: {e}")
+        sys.exit(1)
 
 
 def clone_uci_apis_repository():
@@ -166,32 +194,59 @@ def clone_uci_apis_repository():
         print()
         return
 
-    print("Cloning UCI APIs repository from Git...")
-    run_command(["git", "clone", "-b", "release-4.7.0", "https://github.com/samagra-comms/uci-apis.git"])
-    print("UCI APIs repository clone complete.")
-    print()
+    # Clone the UCI APIs repository using GitPython
+    try:
+        git.Repo.clone_from("https://github.com/samagra-comms/uci-apis.git", "uci-apis", branch="release-4.7.0")
+        print("UCI APIs repository clone complete.")
+        print()
+    except git.exc.GitCommandError as e:
+        print_error_message(f"Error while cloning UCI APIs repository: {e}")
+        sys.exit(1)
 
+
+def replace_env_variable(file_path, variable_name, variable_value):
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+
+    with open(file_path, "w") as file:
+        for line in lines:
+            if line.startswith(f"{variable_name}="):
+                line = f"{variable_name}={variable_value}\n"
+            file.write(line)
 
 def build_and_setup_uci_web_channel():
     print_stage_message("Building and setting up UCI Web Channel")
 
     if os.path.exists("uci-web-channel"):
+        # Copy .env-uci-web-channel to .env
         shutil.copy(".env-uci-web-channel", "uci-web-channel/.env")
-        os.chdir("uci-web-channel")
+
+        # Replace environment variables in .env file
         transportSocketURL = f"REACT_APP_TRANSPORT_SOCKET_URL=ws://{SYSTEM_IP}:3005"
-        run_command(["sed", "-i", "3s|^.*$|{}|".format(transportSocketURL), ".env"])
-        run_command(["yarn", "install"])
-        run_command(["yarn", "build"])
-        os.chdir("..")
+        replace_env_variable("uci-web-channel/.env", "REACT_APP_TRANSPORT_SOCKET_URL", transportSocketURL)
+
+        # os.chdir("uci-web-channel")
+        # run_command(["yarn", "install"])
+        # run_command(["yarn", "build"])
+        # os.chdir("..")
     else:
-        os.system("git clone https://github.com/samagra-comms/uci-web-channel.git")
-        shutil.copy(".env-uci-web-channel", "uci-web-channel/.env")
-        os.chdir("uci-web-channel")
-        transportSocketURL = f"REACT_APP_TRANSPORT_SOCKET_URL=ws://{SYSTEM_IP}:3005"
-        run_command(["sed", "-i", "3s|^.*$|{}|".format(transportSocketURL), ".env"])
-        run_command(["yarn", "install"])
-        run_command(["yarn", "build"])
-        os.chdir("..")
+        # Clone the UCI Web Channel repository using GitPython
+        try:
+            git.Repo.clone_from("https://github.com/samagra-comms/uci-web-channel.git", "uci-web-channel")
+            # Copy .env-uci-web-channel to .env
+            shutil.copy(".env-uci-web-channel", "uci-web-channel/.env")
+
+            # Replace environment variables in .env file
+            transportSocketURL = f"REACT_APP_TRANSPORT_SOCKET_URL=ws://{SYSTEM_IP}:3005"
+            replace_env_variable("uci-web-channel/.env", "REACT_APP_TRANSPORT_SOCKET_URL", transportSocketURL)
+
+            # os.chdir("uci-web-channel")
+            # run_command(["yarn", "install"])
+            # run_command(["yarn", "build"])
+            # os.chdir("..")
+        except git.exc.GitCommandError as e:
+            print_error_message(f"Error while cloning UCI Web Channel repository: {e}")
+            sys.exit(1)
 
     print("UCI Web Channel build and setup complete.")
     print()
@@ -201,24 +256,37 @@ def build_and_setup_uci_admin():
     print_stage_message("Building and setting up UCI Admin")
 
     if os.path.exists("uci-admin"):
+        # Copy .env-uci-admin to .env
         if os.path.exists(".env-uci-admin"):
             shutil.copy(".env-uci-admin", "uci-admin/.env")
-        os.chdir("uci-admin")
+
+        # Replace environment variables in .env file
         uciApiBaseURL = f"NG_APP_url='http://{SYSTEM_IP}:9999'"
-        run_command(["sed", "-i", "1s|^.*$|{}|".format(uciApiBaseURL), ".env"])
-        run_command(["npm", "i"])
-        run_command(["npm", "run", "build", "--configuration", "production"])
-        os.chdir("..")
+        replace_env_variable("uci-admin/.env", "NG_APP_url", uciApiBaseURL)
+
+        # os.chdir("uci-admin")
+        # run_command(["npm", "i"])
+        # run_command(["npm", "run", "build", "--configuration", "production"])
+        # os.chdir("..")
     else:
-        os.system("git clone https://github.com/samagra-comms/uci-admin")
-        if os.path.exists(".env-uci-admin"):
-            shutil.copy(".env-uci-admin", "uci-admin/.env")
-        os.chdir("uci-admin")
-        uciApiBaseURL = f"NG_APP_url='http://{SYSTEM_IP}:9999'"
-        run_command(["sed", "-i", "1s|^.*$|{}|".format(uciApiBaseURL), ".env"])
-        run_command(["npm", "i"])
-        run_command(["npm", "run", "build", "--configuration", "production"])
-        os.chdir("..")
+        # Clone the UCI Admin repository using GitPython
+        try:
+            git.Repo.clone_from("https://github.com/samagra-comms/uci-admin.git", "uci-admin")
+            # Copy .env-uci-admin to .env
+            if os.path.exists(".env-uci-admin"):
+                shutil.copy(".env-uci-admin", "uci-admin/.env")
+
+            # Replace environment variables in .env file
+            uciApiBaseURL = f"NG_APP_url='http://{SYSTEM_IP}:9999'"
+            replace_env_variable("uci-admin/.env", "NG_APP_url", uciApiBaseURL)
+
+            # os.chdir("uci-admin")
+            # run_command(["npm", "i"])
+            # run_command(["npm", "run", "build", "--configuration", "production"])
+            # os.chdir("..")
+        except git.exc.GitCommandError as e:
+            print_error_message(f"Error while cloning UCI Admin repository: {e}")
+            sys.exit(1)
 
     print("UCI Admin build and setup complete.")
     print()
@@ -227,42 +295,20 @@ def build_and_setup_uci_admin():
 def run_docker_compose_services():
     print_stage_message("Running Docker Compose services")
 
-    run_command(["docker-compose", "up", "-d", "fa-search", "fusionauth", "fa-db"])
+    try:
+        services_to_start = ["fa-search", "fusionauth", "fa-db", "cass", "kafka", "schema-registry", "zookeeper", "connect", "aggregate-db", "wait_for_db", "aggregate-server"]
 
-    print("Building ElasticSearch and FusionAuth containers. This may take a few minutes.")
-    print()
+        for service in services_to_start:
+            print(f"Starting '{service}' service...")
+            subprocess.run(["docker-compose", "up", "-d", service], check=True)
+            subprocess.run(["docker-compose", "up", "-d"], check=True)
 
-    get_status("fa-search")
-    get_status("fusionauth")
-    get_status("fa-db")
+        print("All services are up")
+        print()
 
-    run_command(["docker-compose", "up", "-d", "cass", "kafka", "schema-registry", "zookeeper", "connect"])
-
-    print("Setting up Kafka components. This may take a few minutes.")
-    print()
-
-    get_status("cass")
-    get_status("kafka")
-    get_status("schema-registry")
-    get_status("zookeeper")
-    get_status("connect")
-
-    run_command(["docker-compose", "up", "-d", "aggregate-db", "wait_for_db", "aggregate-server"])
-
-    print("Setting up ODK components. This may take a few minutes.")
-    print()
-
-    get_status("aggregate-db")
-    get_status("wait_for_db")
-    get_status("aggregate-server")
-
-    print("Resolving dependencies")
-    print()
-
-    run_command(["docker-compose", "up", "-d"])
-
-    print("All services are up")
-    print()
+    except subprocess.CalledProcessError as e:
+        print_error_message(f"Error while running Docker Compose services: {e}")
+        sys.exit(1)
     
 def upload_form(admin_token, path_to_xml):
     print_stage_message("Uploading form")
@@ -388,12 +434,27 @@ def create_bot_with_curl(conversation_logic_id):
         print("Error occurred during the cURL command execution:")
         print(e.stderr)
         return None
+    
+def get_system_ip():
+    global SYSTEM_IP
+
+    try:
+        # Get the local IP address of the system
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        SYSTEM_IP = s.getsockname()[0]
+        s.close()
+    except Exception as e:
+        print_error_message(f"Error while getting system IP: {e}")
+        sys.exit(1)
 
 def main():
-    # Define versions
-    INSTALL_NODE_VER = "16.14.0"
-    INSTALL_NVM_VER = "0.39.1"
-    INSTALL_YARN_VER = "1.22.17"
+    parser = argparse.ArgumentParser(description="UCI Installation Script")
+    parser.add_argument("encryption_key", help="Encryption Key")
+    parser.add_argument("--netcore_whatsapp_auth_token", help="Netcore Whatsapp Auth Token",required=False)
+    parser.add_argument("--netcore_whatsapp_source", help="Netcore Whatsapp Source",required=False)
+    parser.add_argument("--netcore_whatsapp_uri", help="Netcore Whatsapp URI",required=False)
+    args = parser.parse_args()
 
     # Print welcome message
     print("\n\n\n****************************************************")
@@ -401,59 +462,60 @@ def main():
     print("****************************************************")
     print("\n\n\n")
 
-    # Ensure .bashrc exists and is writable
-    os.system("touch ~/.bashrc")
+    # # Ensure .bashrc exists and is writable
+    # os.system("touch ~/.bashrc")
 
-    # Stage 1: Node.js setup
-    print_stage_message("Stage 1: Node.js setup")
+    # # Stage 1: Node.js setup
+    # print_stage_message("Stage 1: Node.js setup")
 
-    install_node_version_manager()
-    install_nodejs()
-    install_yarn()
-    add_yarn_to_path()
+    # install_node_version_manager()
+    # install_nodejs()
+    # install_yarn()
+    # add_yarn_to_path()
 
-    # Stage 2: Exporting keys and environment variables
-    print_stage_message("Stage 2: Exporting keys and environment variables")
+    # # Stage 2: Exporting keys and environment variables
+    # print_stage_message("Stage 2: Exporting keys and environment variables")
 
-    export_keys()
+    # export_keys(args)
+    
+    # get_system_ip()
 
-    # Stage 3: Docker setup
-    print_stage_message("Stage 3: Docker setup")
+    # # # Stage 3: Docker setup
+    # print_stage_message("Stage 3: Docker setup")
 
-    check_and_install_docker()
-    check_and_install_docker_compose()
+    # check_and_install_docker()
+    # check_and_install_docker_compose()
 
-    # Stage 4: Cloning repositories
-    print_stage_message("Stage 4: Cloning repositories")
+    # # Stage 4: Cloning repositories
+    # print_stage_message("Stage 4: Cloning repositories")
 
-    clone_odk_repository()
-    clone_uci_apis_repository()
+    # clone_odk_repository()
+    # clone_uci_apis_repository()
 
-    # Stage 5: Building and setting up UCI Web Channel
-    print_stage_message("Stage 5: Building and setting up UCI Web Channel")
+    # # Stage 5: Building and setting up UCI Web Channel
+    # print_stage_message("Stage 5: Building and setting up UCI Web Channel")
 
-    build_and_setup_uci_web_channel()
+    # build_and_setup_uci_web_channel()
 
-    # Stage 6: Building and setting up UCI Admin
-    print_stage_message("Stage 6: Building and setting up UCI Admin")
+    # # Stage 6: Building and setting up UCI Admin
+    # print_stage_message("Stage 6: Building and setting up UCI Admin")
 
-    build_and_setup_uci_admin()
+    # build_and_setup_uci_admin()
 
-    # Stage 7: Running Docker Compose services
-    print_stage_message("Stage 7: Running Docker Compose services")
+    # # Stage 7: Running Docker Compose services
+    # print_stage_message("Stage 7: Running Docker Compose services")
 
-    run_docker_compose_services()
-    # Additional steps after installation...
+    # run_docker_compose_services()
+    # # Additional steps after installation...
+    
+    sleep(120)
 
-    asset = "bot"
     admin_token = "dR67yAkMAqW5P9xk6DDJnfn6KbD4EJFVpmPEjuZMq44jJGcj65"
-    owner_org_id = "org01"
-    owner_id = "8f7ee860-0163-4229-9d2a-01cef53145ba"
     path_to_xml = "./media/List-QRB-Test-Bot.xml"
-    path_to_image = "./media/Test-Bot-Flow-pwa.png"
         
     # form_id = upload_form(admin_token, path_to_xml)
-    form_id = 123456789
+    form_id = 123456
+    # form_id = 123456789
     print(f"Form ID: {form_id}")
 
     logic_id = create_conversation_logic(admin_token, form_id)

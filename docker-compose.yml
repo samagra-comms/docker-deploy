@@ -241,7 +241,6 @@ services:
     restart: always
     volumes:
       - ./out/cd-new:/var/lib/cassandra
-      - ./cassandra-config/cassandra.yaml:/opt/cassandra/conf/cassandra.yaml
   
   formsdb:
     restart: always
