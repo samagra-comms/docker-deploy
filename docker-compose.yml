@@ -3,7 +3,7 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    image: samagragovernance/uci-apis:${CURRENT_VERSION}
+    image: samagragovernance/uci-apis:latest
     restart: always
     env_file: .env
     ports:
