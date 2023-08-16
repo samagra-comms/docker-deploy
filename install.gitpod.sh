@@ -129,6 +129,7 @@ if [[ ! -e odk-aggregate ]]; then
     cd ..
 fi
 
+# Clone repo for web-channel
 if [[ ! -e uci-web-channel ]]; then
   # UCI Web Channel
   git clone https://github.com/samagra-comms/uci-web-channel.git

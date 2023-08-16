@@ -20,7 +20,7 @@ services:
     # command: ["sh", "-c", "sleep 60 && docker-entrypoint.sh postgres && psql -U ${UCI_API_POSTGRES_USER} -d ${UCI_API_POSTGRES_DB} -f /docker-entrypoint-initdb.d/initdb_script.sql"]      
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
-      # - ./pgdata.sql:/docker-entrypoint-initdb.d/initdb_script.sql
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
 
   uci-api-db-gql:
     image: hasura/graphql-engine:latest
