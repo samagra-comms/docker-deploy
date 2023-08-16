@@ -129,13 +129,6 @@ if [[ ! -e odk-aggregate ]]; then
     cd ..
 fi
 
-if [[ ! -e uci-apis ]]; then
-    echo ""
-    echo "Cloning project from git uci-apis"
-    git clone -b release-4.7.0  https://github.com/samagra-comms/uci-apis.git
-    echo ""
-fi
-
 if [[ ! -e uci-web-channel ]]; then
   # UCI Web Channel
   git clone https://github.com/samagra-comms/uci-web-channel.git
@@ -160,6 +153,7 @@ else
   cd ..
 fi
 
+# Clone repo for uci-admin
 if [[ ! -e uci-admin ]]; then
   # UCI Admin
   git clone https://github.com/samagra-comms/uci-admin

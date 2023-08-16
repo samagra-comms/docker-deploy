@@ -21,8 +21,6 @@
 !docker-compose-debug.yml
 !vault/vault.json
 !vault
-!setup-manual.sh
 !INSTALL.md
-!initdb_scripts/*
 uci-db-backup.sql
 !install.py

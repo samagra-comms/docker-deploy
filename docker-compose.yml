@@ -3,8 +3,7 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    build: ./uci-apis/
-    image: federation-service
+    image: samagragovernance/uci-apis:${CURRENT_VERSION}
     restart: always
     env_file: .env
     ports:
@@ -24,7 +23,7 @@ services:
       # - ./pgdata.sql:/docker-entrypoint-initdb.d/initdb_script.sql
 
   uci-api-db-gql:
-    image: hasura/graphql-engine:v2.7.0
+    image: hasura/graphql-engine:latest
     restart: always
     env_file: .env
     ports:
