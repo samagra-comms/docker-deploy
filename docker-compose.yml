@@ -223,23 +223,31 @@ services:
     env_file: .env-cdac
 
   cass:
-    image: cassandra:latest
-    hostname: cass
-    ports:
-      - 7000:7000
-      - 7001:7001
-      - 7199:7199
-      - 9041:9042
-      - 9160:9160
-    environment:
-      - JVM_OPTS=-Xmx8G -Xms1G -Xss512k
-      - MAX_HEAP_SIZE=8092M
-      - HEAP_NEWSIZE=8092M
-      - CASSANDRA_RPC_ADDRESS=0.0.0.0
-      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    image: bitnami/cassandra:latest
     restart: always
+    environment:
+      - MAX_HEAP_SIZE=1000M
+      - HEAP_NEWSIZE=1000M
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0
+      - CASSANDRA_SEEDS=cass
+      - CASSANDRA_PASSWORD_SEEDER=yes      
+      - CASSANDRA_USER=${CASSANDRA_USER}
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+      - CASSANDRA_HOST=cass
     volumes:
-      - ./out/cd-new:/var/lib/cassandra
+      - ./data/cd-data:/var/lib/cassandra
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "cqlsh",
+          "-u cassandra",
+          "-p cassandra",
+          "-e describe keyspaces",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
   
   formsdb:
     restart: always
@@ -250,7 +258,6 @@ services:
       POSTGRES_DB: ${FORMS_DB_NAME}
     volumes:
       - ./data/formsdb-data:/var/lib/postgresql/data
-      # - ./init_scripts/forms-db.sql:/docker-entrypoint-initdb.d/forms-db.sql
 
   graphql-formsdb:
     restart: always
@@ -274,7 +281,6 @@ services:
       - POSTGRES_USER=${ODK_POSTGRES_USER}
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
-      # - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
       - ./data/pgdata-odk:/var/lib/postgresql/data
       - ./initdb_scripts/aggregate-db.sql:/docker-entrypoint-initdb.d/init.sql
 
@@ -306,6 +312,7 @@ services:
 # Fusion Auth
 
   fa-search:
+    restart: always
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
     environment:
       - cluster.name=fusionauth
@@ -354,7 +361,6 @@ services:
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
     volumes:
       - ./data/pgdata-fa-db:/var/lib/postgresql/data
-      # - ./initdb_scripts/fa-db.sql:/docker-entrypoint-initdb.d/fa-db.sql
   
   vault:
     image: vault:1.10.3

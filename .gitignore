@@ -22,5 +22,4 @@
 !vault/vault.json
 !vault
 !INSTALL.md
-uci-db-backup.sql
 !install.py
