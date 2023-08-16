@@ -17,7 +17,6 @@ services:
       - POSTGRES_PASSWORD=${UCI_API_POSTGRES_PASSWORD}
       - POSTGRES_USER=${UCI_API_POSTGRES_USER}
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
-    # command: ["sh", "-c", "sleep 60 && docker-entrypoint.sh postgres && psql -U ${UCI_API_POSTGRES_USER} -d ${UCI_API_POSTGRES_DB} -f /docker-entrypoint-initdb.d/initdb_script.sql"]      
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
       - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
@@ -281,8 +280,8 @@ services:
       - POSTGRES_USER=${ODK_POSTGRES_USER}
       - POSTGRES_DB=${ODK_POSTGRES_DB}
     volumes:
+      - ./odk-aggregate/odk/initdb:/docker-entrypoint-initdb.d
       - ./data/pgdata-odk:/var/lib/postgresql/data
-      - ./initdb_scripts/aggregate-db.sql:/docker-entrypoint-initdb.d/init.sql
 
   wait_for_db:
     restart: always
