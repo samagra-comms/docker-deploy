@@ -222,31 +222,23 @@ services:
     env_file: .env-cdac
 
   cass:
-    image: bitnami/cassandra:latest
-    restart: always
+    image: cassandra:latest
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 7199:7199
+      - 9041:9042
+      - 9160:9160
     environment:
-      - MAX_HEAP_SIZE=1000M
-      - HEAP_NEWSIZE=1000M
+      - JVM_OPTS=-Xmx8G -Xms1G -Xss512k
+      - MAX_HEAP_SIZE=8092M
+      - HEAP_NEWSIZE=8092M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
-      - CASSANDRA_SEEDS=cass
-      - CASSANDRA_PASSWORD_SEEDER=yes      
-      - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-      - CASSANDRA_HOST=cass
+    restart: always
     volumes:
       - ./data/cd-data:/var/lib/cassandra
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "cqlsh",
-          "-u cassandra",
-          "-p cassandra",
-          "-e describe keyspaces",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
+      - ./cassandra.yaml:/opt/cassandra/conf/cassandra.yaml
   
   formsdb:
     restart: always
@@ -389,3 +381,33 @@ services:
       MINIO_IDENTITY_OPENID_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
     depends_on:
       - fusionauth
+
+  akhq:
+    image: tchiotludo/akhq
+    ports:
+      # TODO: UNPROTECTED ADMIN LOGIN. DON'T EXPOSE THIS !!!!
+      - "18080:8080"
+      # - "8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          clients-defaults:
+            consumer:
+              properties:
+                default.api.timeout.ms: 15000000
+          security:
+            basic-auth:
+              - username: ${AKHQ_USERNAME}
+                password: ${AKHQ_PASSWORD}
+                groups: 
+                  - admin
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:19092"
+              schema-registry:
+                url: "http://schema-registry:8085"
+              connect:
+                - name: "connect"
+                  url: "http://connect:8083"
+    restart: unless-stopped

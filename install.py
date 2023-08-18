@@ -177,7 +177,7 @@ def clone_odk_repository():
 
     # Clone the ODK repository using GitPython
     try:
-        git.Repo.clone_from("https://github.com/samagra-comms/odk.git", "odk-aggregate", branch="release-4.4.0")
+        git.Repo.clone_from("https://github.com/samagra-comms/odk.git", "odk-aggregate")
         print("ODK repository clone complete.")
         print()
     except git.exc.GitCommandError as e:
@@ -195,7 +195,7 @@ def clone_uci_apis_repository():
 
     # Clone the UCI APIs repository using GitPython
     try:
-        git.Repo.clone_from("https://github.com/samagra-comms/uci-apis.git", "uci-apis", branch="release-4.7.0")
+        git.Repo.clone_from("https://github.com/samagra-comms/uci-apis.git", "uci-apis")
         print("UCI APIs repository clone complete.")
         print()
     except git.exc.GitCommandError as e:
@@ -493,6 +493,19 @@ def get_system_ip():
         print_error_message(f"Error while getting system IP: {e}")
         sys.exit(1)
 
+def countdown_timer(seconds):
+    print("Now it's time to run the sql queries on hasura. Don't worry, I'll wait till then :-)")
+    print("================")
+
+    while seconds > 0:
+        minutes, secs = divmod(seconds, 60)
+        timer_display = f"{minutes:02d}:{secs:02d}"
+        print(timer_display, end="\r")
+        time.sleep(1)
+        seconds -= 1
+
+    print("Time's up!")
+
 def main():
     parser = argparse.ArgumentParser(description="UCI Installation Script")
     parser.add_argument("encryption_key", help="Encryption Key")
@@ -556,13 +569,13 @@ def main():
     run_docker_services()
     # Additional steps after installation...
     
-    sleep(120)
+    countdown_timer(180)
 
     admin_token = "dR67yAkMAqW5P9xk6DDJnfn6KbD4EJFVpmPEjuZMq44jJGcj65"
     path_to_xml = "./media/List-QRB-Test-Bot.xml"
         
-    form_id = upload_form(admin_token, path_to_xml)
-    # form_id = 123456789
+    # form_id = upload_form(admin_token, path_to_xml)
+    form_id = "academic_timeline 11 aug seg1 v2"
     print(f"Form ID: {form_id}")
 
     logic_id = create_conversation_logic(admin_token, form_id)
