@@ -44,7 +44,7 @@ services:
 
 # UCI PWA Adapter
   uci-transport-socket:
-    image: samagragovernance/uci-transport-socket:655da87
+    image: samagragovernance/uci-transport-socket:v2.1.8
     restart: always
     environment:
       REDIS_HOST: cache
@@ -210,7 +210,7 @@ services:
       - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
 
   broadcast-transformer:
-    image: "samagragovernance/broadcast-transformer:${CURRENT_VERSION}"
+    image: "samagragovernance/broadcast-transformer:v2.2.12-SNAPSHOT"
     restart: always
     env_file: .env
     ports:
@@ -303,45 +303,54 @@ services:
 # Fusion Auth
 
   fa-search:
-    restart: always
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
     environment:
-      - cluster.name=fusionauth
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
-      - discovery.type=single-node
-    # ulimits: # Don't work with Gitpod
-    #   memlock:
-    #     soft: -1
-    #     hard: -1
+      cluster.name: fusionauth
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
+    healthcheck:
+      test: [ "CMD", "curl",  "--fail" ,"--write-out", "'HTTP %{http_code}'", "--silent", "--output", "/dev/null", "http://localhost:9200/" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
       - ./data/fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - fa-search
-      - fa-db
+      fa-db:
+        condition: service_healthy
+      fa-search:
+        condition: service_healthy
     environment:
       DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
       DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
       DATABASE_ROOT_PASSWORD: ${FUSIONAUTH_POSTGRES_PASSWORD}
       DATABASE_USERNAME: ${FUSIONAUTH_DATABASE_USER}
       DATABASE_PASSWORD: ${FUSIONAUTH_DATABASE_USERNAME}
-      FUSIONAUTH_SEARCH_ENGINE_TYPE: elasticsearch
-      FUSIONAUTH_SEARCH_SERVERS: http://fa-search:9200
-      FUSIONAUTH_URL: http://fusionauth:9011
       FUSIONAUTH_API_KEY: ${FUSIONAUTH_API_KEY}
-      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
       FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
       FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
       FUSIONAUTH_APPLICATION_ID: ${FUSIONAUTH_APPLICATION_ID}
       FUSIONAUTH_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
+      FUSIONAUTH_APP_MEMORY: ${FUSIONAUTH_APP_MEMORY}
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_URL: http://fusionauth:9011
+      SEARCH_SERVERS: http://fa-search:9200
+      SEARCH_TYPE: elasticsearch
+      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
     ports:
       - 9011:9011
     volumes:
-      - ./fa-config:/usr/local/fusionauth/config
+      - fa-config:/usr/local/fusionauth/config
       - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
@@ -352,6 +361,11 @@ services:
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
     volumes:
       - ./data/pgdata-fa-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   
   vault:
     image: vault:1.10.3
@@ -411,3 +425,6 @@ services:
                 - name: "connect"
                   url: "http://connect:8083"
     restart: unless-stopped
+
+volumes:
+  fa-config:
