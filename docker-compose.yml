@@ -304,6 +304,8 @@ services:
 
   fa-search:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    env_file:
+      - .env
     environment:
       cluster.name: fusionauth
       bootstrap.memory_lock: "true"
@@ -320,7 +322,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - ./data/fa-es-data:/usr/share/elasticsearch/data
+      - fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
@@ -428,3 +430,4 @@ services:
 
 volumes:
   fa-config:
+  fa-es-data:
