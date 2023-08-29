@@ -182,28 +182,28 @@ services:
 
 # UCI Core
   inbound:
-    image: "samagragovernance/inbound:${CURRENT_VERSION}"
+    image: "samagragovernance/inbound:latest"
     restart: always
     env_file: .env
     ports:
       - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
 
   orchestrator:
-    image: "samagragovernance/orchestrator:${CURRENT_VERSION}"
+    image: "samagragovernance/orchestrator:latest"
     restart: always
     env_file: .env
     ports:
       - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
 
   transformer:
-    image: "samagragovernance/transformer:${CURRENT_VERSION}"
+    image: "samagragovernance/transformer:latest"
     restart: always
     env_file: .env
     ports:
       - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
 
   outbound:
-    image: "samagragovernance/outbound:${CURRENT_VERSION}"
+    image: "samagragovernance/outbound:latest"
     restart: always
     env_file: .env
     ports:

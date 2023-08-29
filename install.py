@@ -437,7 +437,7 @@ def create_bot_with_curl(conversation_logic_id):
             "purpose": "Sample",
             "startingMessage": "Hey",
             "startDate": "2023-06-16",
-            "endDate": "2023-06-30",
+            "endDate": "2024-06-30",
             "isBroadcastBotEnabled": True,
             "segmentId": "1",
             "status": "enabled",
