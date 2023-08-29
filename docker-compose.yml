@@ -298,7 +298,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
+      - ./odk-aggregate/webapps:/usr/local/tomcat/webapps
 
 # Fusion Auth
 
