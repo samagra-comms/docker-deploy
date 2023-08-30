@@ -54,16 +54,10 @@ services:
     ports:
       - 3005:3005
 
-  # TODO: Needs to be fixed for general purpose use
   uci-web-channel:
     restart: always
-    image: nginx
-    volumes:
-    - ./nginx.conf:/etc/nginx/nginx.conf
-    - ./uci-web-channel.conf:/etc/nginx/sites-enabled/default
-    - ./uci-web-channel/build:/usr/site
-    # environment:
-    #   REACT_APP_TRANSPORT_SOCKET_URL: "ws://localhost:3005"
+    image: samagragovernance/uci-web-channel:latest
+    env_file: .env
     ports:
     - "9098:80"
 
