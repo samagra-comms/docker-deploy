@@ -233,7 +233,7 @@ services:
     volumes:
       - ./data/cd-data:/var/lib/cassandra
       - ./cassandra.yaml:/opt/cassandra/conf/cassandra.yaml
-  
+      - ./init-scripts/cassandra.cql:/docker-entrypoint-initdb.d/cassandra.cql
   formsdb:
     restart: always
     image: postgres:9.6

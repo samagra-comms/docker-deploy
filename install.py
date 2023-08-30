@@ -355,25 +355,18 @@ def run_kafka_services():
         print_error_message(f"Error while running Docker Compose services: {e}")
         sys.exit(1)
     
-def upload_form(admin_token, path_to_xml):
+def upload_form(path_to_xml):
     print_stage_message("Uploading form")
 
-    url = "http://localhost:9999/admin/form/upload"
-    headers = {
-        "admin-token": admin_token
-    }
+    url = "http://localhost:8080/formUpload"
     files = {
-        "form": open(path_to_xml, "rb")
+        "form_def_file": (path_to_xml.split("/")[-1], open(path_to_xml, "rb"))
     }
 
     try:
-        response = requests.post(url, headers=headers, files=files)
+        response = requests.post(url, files=files)
         response.raise_for_status()
-        response_data = response.json()
-        form_id = response_data["result"]["data"]["formID"]
         print("Form upload successful.")
-        print()
-        return form_id
     except requests.exceptions.RequestException as e:
         print_error_message(f"Error while uploading form: {e}")
         sys.exit(1)
@@ -492,19 +485,56 @@ def get_system_ip():
     except Exception as e:
         print_error_message(f"Error while getting system IP: {e}")
         sys.exit(1)
+        
+def run_cassandra_queries(cql_file_path):
+    command = [
+        "docker-compose", "exec", "cass",
+        "cqlsh", "-f", cql_file_path
+    ]
+    
+    subprocess.run(command)
 
-def countdown_timer(seconds):
-    print("Now it's time to run the sql queries on hasura. Don't worry, I'll wait till then :-)")
+def execute_hasura_queries():
+    hasura_queries = """
+    INSERT INTO "Service" ("id", "updatedAt", "type", "config")
+    VALUES ('94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW(), 'odk', '{"cadence": { "retries": 0, "timeout": 60, "concurrent": true, "retries-interval": 10 }, "credentials": { "vault": "samagra", "variable": "samagraMainODK" } }');
+    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+    VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', NOW(), 'gupshup', 'WhatsApp', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
+
+    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+    VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', NOW(), 'Netcore', 'WhatsApp', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
+
+    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+    VALUES ('64036edb-e763-44b1-99b8-37b6c7b292c5', NOW(), 'gupshup', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraGupshupSms');
+
+    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+    VALUES ('4e0c568c-7c42-4f88-b1d6-392ad16b8546', NOW(), 'cdac', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraCdacSms');
+
+    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+    VALUES ('2a704e82-132e-41f2-9746-83e74550d2ea', NOW(), 'firebase', 'web', '{ "credentials": { "vault": "samagra", "variable": "uci-firebase-notification" } }', 'SamagraFirebaseWeb');
+
+    INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
+    VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
+
+    INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
+    VALUES ('SamagraBroadcast', array['broadcast'], '{}', '774cd134-6657-4688-85f6-6338e2323dde', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
+
+    INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
+    VALUES ('SamagraGeneric', array['generic'], '{}', '0832ca13-c698-4234-8070-b5f708bc0b1a', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
+    """
+    
+    print("Copy and paste the following Hasura queries:")
     print("================")
-
-    while seconds > 0:
-        minutes, secs = divmod(seconds, 60)
-        timer_display = f"{minutes:02d}:{secs:02d}"
-        print(timer_display, end="\r")
-        time.sleep(1)
-        seconds -= 1
-
-    print("Time's up!")
+    print(hasura_queries)
+    print("================")
+    
+    user_input = input("Once you've executed the queries, enter 'YES' to continue: ")
+    
+    if user_input.strip().upper() == 'YES':
+        print("Continuing with the execution...")
+        # Rest of your code here
+    else:
+        print("Execution aborted.")
 
 def main():
     parser = argparse.ArgumentParser(description="UCI Installation Script")
@@ -523,14 +553,6 @@ def main():
     # Ensure .bashrc exists and is writable
     os.system("touch ~/.bashrc")
 
-    # Stage 1: Node.js setup
-    print_stage_message("Stage 1: Node.js setup")
-
-    install_node_version_manager()
-    install_nodejs()
-    install_yarn()
-    add_yarn_to_path()
-
     # Stage 2: Exporting keys and environment variables
     print_stage_message("Stage 2: Exporting keys and environment variables")
 
@@ -548,12 +570,6 @@ def main():
     print_stage_message("Stage 4: Cloning repositories")
 
     clone_odk_repository()
-    clone_uci_apis_repository()
-
-    # Stage 5: Building and setting up UCI Web Channel
-    print_stage_message("Stage 5: Building and setting up UCI Web Channel")
-
-    build_and_setup_uci_web_channel()
 
     # Stage 6: Building and setting up UCI Admin
     print_stage_message("Stage 6: Building and setting up UCI Admin")
@@ -569,13 +585,14 @@ def main():
     run_docker_services()
     # Additional steps after installation...
     
-    countdown_timer(180)
+    execute_hasura_queries()
+
+    run_cassandra_queries("/docker-entrypoint-initdb.d/cassandra.cql")
 
     admin_token = "dR67yAkMAqW5P9xk6DDJnfn6KbD4EJFVpmPEjuZMq44jJGcj65"
-    path_to_xml = "./media/List-QRB-Test-Bot.xml"
-        
-    # form_id = upload_form(admin_token, path_to_xml)
-    form_id = "academic_timeline 11 aug seg1 v2"
+    path_to_xml = "./media/odk.xml"
+    upload_form(path_to_xml)       
+    form_id = "UCI-Setup-Test-Form"
     print(f"Form ID: {form_id}")
 
     logic_id = create_conversation_logic(admin_token, form_id)
