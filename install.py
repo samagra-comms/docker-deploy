@@ -535,6 +535,11 @@ def execute_hasura_queries():
         # Rest of your code here
     else:
         print("Execution aborted.")
+        
+def custom_sleep(seconds, message="Waiting..."):
+    print(message)
+    time.sleep(seconds)
+    print("Done sleeping!")
 
 def main():
     parser = argparse.ArgumentParser(description="UCI Installation Script")
@@ -586,6 +591,8 @@ def main():
     # Additional steps after installation...
     
     execute_hasura_queries()
+
+    custom_sleep(60, "Let's give cassandra some time to be up and running")
 
     run_cassandra_queries("/docker-entrypoint-initdb.d/cassandra.cql")
 
