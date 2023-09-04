@@ -8,7 +8,11 @@ import json
 import argparse
 import git
 import socket
-from time import sleep
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
 
 # ANSI color escape sequences
 green = "\033[0;32m"
@@ -185,24 +189,6 @@ def clone_odk_repository():
         sys.exit(1)
 
 
-def clone_uci_apis_repository():
-    print_stage_message("Cloning UCI APIs repository")
-
-    if os.path.exists("uci-apis"):
-        print("UCI APIs repository already exists.")
-        print()
-        return
-
-    # Clone the UCI APIs repository using GitPython
-    try:
-        git.Repo.clone_from("https://github.com/samagra-comms/uci-apis.git", "uci-apis")
-        print("UCI APIs repository clone complete.")
-        print()
-    except git.exc.GitCommandError as e:
-        print_error_message(f"Error while cloning UCI APIs repository: {e}")
-        sys.exit(1)
-
-
 def replace_env_variable(file_path, variable_name, variable_value):
     with open(file_path, "r") as file:
         lines = file.readlines()
@@ -212,84 +198,6 @@ def replace_env_variable(file_path, variable_name, variable_value):
             if line.startswith(f"{variable_name}="):
                 line = f"{variable_name}={variable_value}\n"
             file.write(line)
-
-def build_and_setup_uci_web_channel():
-    print_stage_message("Building and setting up UCI Web Channel")
-
-    if os.path.exists("uci-web-channel"):
-        # Copy .env-uci-web-channel to .env
-        shutil.copy(".env-uci-web-channel", "uci-web-channel/.env")
-
-        # Replace environment variables in .env file
-        transportSocketURL = f"REACT_APP_TRANSPORT_SOCKET_URL=ws://{SYSTEM_IP}:3005"
-        replace_env_variable("uci-web-channel/.env", "REACT_APP_TRANSPORT_SOCKET_URL", transportSocketURL)
-
-        # os.chdir("uci-web-channel")
-        # run_command(["yarn", "install"])
-        # run_command(["yarn", "build"])
-        # os.chdir("..")
-    else:
-        # Clone the UCI Web Channel repository using GitPython
-        try:
-            git.Repo.clone_from("https://github.com/samagra-comms/uci-web-channel.git", "uci-web-channel")
-            # Copy .env-uci-web-channel to .env
-            shutil.copy(".env-uci-web-channel", "uci-web-channel/.env")
-
-            # Replace environment variables in .env file
-            transportSocketURL = f"REACT_APP_TRANSPORT_SOCKET_URL=ws://{SYSTEM_IP}:3005"
-            replace_env_variable("uci-web-channel/.env", "REACT_APP_TRANSPORT_SOCKET_URL", transportSocketURL)
-
-            # os.chdir("uci-web-channel")
-            # run_command(["yarn", "install"])
-            # run_command(["yarn", "build"])
-            # os.chdir("..")
-        except git.exc.GitCommandError as e:
-            print_error_message(f"Error while cloning UCI Web Channel repository: {e}")
-            sys.exit(1)
-
-    print("UCI Web Channel build and setup complete.")
-    print()
-
-
-def build_and_setup_uci_admin():
-    print_stage_message("Building and setting up UCI Admin")
-
-    if os.path.exists("uci-admin"):
-        # Copy .env-uci-admin to .env
-        if os.path.exists(".env-uci-admin"):
-            shutil.copy(".env-uci-admin", "uci-admin/.env")
-
-        # Replace environment variables in .env file
-        uciApiBaseURL = f"NG_APP_url='http://{SYSTEM_IP}:9999'"
-        replace_env_variable("uci-admin/.env", "NG_APP_url", uciApiBaseURL)
-
-        # os.chdir("uci-admin")
-        # run_command(["npm", "i"])
-        # run_command(["npm", "run", "build", "--configuration", "production"])
-        # os.chdir("..")
-    else:
-        # Clone the UCI Admin repository using GitPython
-        try:
-            git.Repo.clone_from("https://github.com/samagra-comms/uci-admin.git", "uci-admin")
-            # Copy .env-uci-admin to .env
-            if os.path.exists(".env-uci-admin"):
-                shutil.copy(".env-uci-admin", "uci-admin/.env")
-
-            # Replace environment variables in .env file
-            uciApiBaseURL = f"NG_APP_url='http://{SYSTEM_IP}:9999'"
-            replace_env_variable("uci-admin/.env", "NG_APP_url", uciApiBaseURL)
-
-            # os.chdir("uci-admin")
-            # run_command(["npm", "i"])
-            # run_command(["npm", "run", "build", "--configuration", "production"])
-            # os.chdir("..")
-        except git.exc.GitCommandError as e:
-            print_error_message(f"Error while cloning UCI Admin repository: {e}")
-            sys.exit(1)
-
-    print("UCI Admin build and setup complete.")
-    print()
-
 
 def run_fusionauth_services():
     print_stage_message("Building ElasticSearch and FusionAuth containers. This may take a few minutes.")
@@ -403,7 +311,6 @@ def create_conversation_logic(admin_token, form_id):
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
         response_data = response.json()
-        print(response_data)
         logic_id = response_data["result"]["id"]
         print("Conversation logic creation successful.")
         print()
@@ -474,14 +381,12 @@ def create_bot_with_curl(conversation_logic_id):
         return None
     
 def get_system_ip():
-    global SYSTEM_IP
-
     try:
-        # Get the local IP address of the system
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
-        SYSTEM_IP = s.getsockname()[0]
+        system_ip = s.getsockname()[0]
         s.close()
+        return system_ip
     except Exception as e:
         print_error_message(f"Error while getting system IP: {e}")
         sys.exit(1)
@@ -495,51 +400,77 @@ def run_cassandra_queries(cql_file_path):
     subprocess.run(command)
 
 def execute_hasura_queries():
-    hasura_queries = """
-    INSERT INTO "Service" ("id", "updatedAt", "type", "config")
-    VALUES ('94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW(), 'odk', '{"cadence": { "retries": 0, "timeout": 60, "concurrent": true, "retries-interval": 10 }, "credentials": { "vault": "samagra", "variable": "samagraMainODK" } }');
-    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
-    VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', NOW(), 'gupshup', 'WhatsApp', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
-
-    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
-    VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', NOW(), 'Netcore', 'WhatsApp', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
-
-    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
-    VALUES ('64036edb-e763-44b1-99b8-37b6c7b292c5', NOW(), 'gupshup', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraGupshupSms');
-
-    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
-    VALUES ('4e0c568c-7c42-4f88-b1d6-392ad16b8546', NOW(), 'cdac', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraCdacSms');
-
-    INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
-    VALUES ('2a704e82-132e-41f2-9746-83e74550d2ea', NOW(), 'firebase', 'web', '{ "credentials": { "vault": "samagra", "variable": "uci-firebase-notification" } }', 'SamagraFirebaseWeb');
-
-    INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
-    VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
-
-    INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
-    VALUES ('SamagraBroadcast', array['broadcast'], '{}', '774cd134-6657-4688-85f6-6338e2323dde', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
-
-    INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
-    VALUES ('SamagraGeneric', array['generic'], '{}', '0832ca13-c698-4234-8070-b5f708bc0b1a', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
-    """
     
-    print("Copy and paste the following Hasura queries:")
-    print("================")
-    print(hasura_queries)
-    print("================")
+    hasura_admin_key = os.getenv("HASURA_GRAPHQL_ADMIN_SECRET")
+    
+    system_ip = get_system_ip()
+    
+    instructions_prev=f"""
+        1. Open your web browser and go to {system_ip}:15003 (Hasura Console).
+        2. Enter this api key when asked: {hasura_admin_key}
+        3. Once logged in, you'll be on the main dashboard.
+        4. Look for the "Data" tab, usually located in the top menu or navigation panel.
+        5. Under the "Data" tab, you'll find a list of databases and schemas on the left side. Locate the "public" schema under the default database.
+        6. Click on the "public" schema. The schema's contents will be displayed in the main area.
+        7. In the upper-right corner, you'll find a button that might say "Untracked" or "Track All." Click on it to start tracking all the relations and tables within the "public" schema.
+        8. Hasura will initiate the tracking process, and you'll see the status changing for each table and relation as they are being tracked.
+        9. Wait for the tracking process to complete. Once done, you'll see that all tables and relations have been successfully tracked
+
+        1. Look for the "SQL" tab, typically located below the "Databases" section.
+        2. Click on the "SQL" tab to access the SQL editor.
+        3. In the SQL editor, you'll see a space where you can write and execute SQL queries.
+        4. Copy these below queries:
+        """
+    
+    instructions_after="""
+        INSERT INTO "Service" ("id", "updatedAt", "type", "config")
+        VALUES ('94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW(), 'odk', '{"cadence": { "retries": 0, "timeout": 60, "concurrent": true, "retries-interval": 10 }, "credentials": { "vault": "samagra", "variable": "samagraMainODK" } }');
+        INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307324', NOW(), 'gupshup', 'WhatsApp', '{ "2WAY": "2000193033", "phone": "9876543210", "HSM_ID": "2000193031", "credentials": { "vault": "samagra", "variable": "gupshupSamagraProd" } }', 'SamagraProd');
+
+        INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+        VALUES ('44a9df72-3d7a-4ece-94c5-98cf26307323', NOW(), 'Netcore', 'WhatsApp', '{ "phone": "912249757677", "credentials": { "vault": "samagra", "variable": "netcoreUAT" } }', 'SamagraNetcoreUAT');
+
+        INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+        VALUES ('64036edb-e763-44b1-99b8-37b6c7b292c5', NOW(), 'gupshup', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraGupshupSms');
+
+        INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+        VALUES ('4e0c568c-7c42-4f88-b1d6-392ad16b8546', NOW(), 'cdac', 'sms', '{"2WAY":"2000193033","phone":"9876543210","HSM_ID":"2000193031","credentials":{"vault":"samagra","variable":"gupshupSamagraProd"}}', 'SamagraCdacSms');
+
+        INSERT INTO "Adapter" ("id", "updatedAt", "provider", "channel", "config", "name") 
+        VALUES ('2a704e82-132e-41f2-9746-83e74550d2ea', NOW(), 'firebase', 'web', '{ "credentials": { "vault": "samagra", "variable": "uci-firebase-notification" } }', 'SamagraFirebaseWeb');
+
+        INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
+        VALUES ('SamagraODKAgg', array['ODK'], '{}', 'bbf56981-b8c9-40e9-8067-468c2c753659', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
+
+        INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
+        VALUES ('SamagraBroadcast', array['broadcast'], '{}', '774cd134-6657-4688-85f6-6338e2323dde', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());
+
+        INSERT INTO "Transformer" ("name", "tags", "config", "id", "serviceId", "updatedAt") 
+        VALUES ('SamagraGeneric', array['generic'], '{}', '0832ca13-c698-4234-8070-b5f708bc0b1a', '94b7c56a-6537-49e3-88e5-4ea548b2f075', NOW());    
+
+        5. Paste the queries into the SQL editor, just below the "public" database schema.
+        6. After verifying the queries, you can execute them by clicking on the "Run" or "Execute" button, often represented by a play button icon.
+        7. The queries will be executed, and the tables will be populated by sample adapters.
+        """
+    print(instructions_prev)
+    print(instructions_after)
     
     user_input = input("Once you've executed the queries, enter 'YES' to continue: ")
     
     if user_input.strip().upper() == 'YES':
         print("Continuing with the execution...")
-        # Rest of your code here
     else:
-        print("Execution aborted.")
-        
-def custom_sleep(seconds, message="Waiting..."):
-    print(message)
-    time.sleep(seconds)
-    print("Done sleeping!")
+        print("Execution aborted.")    
+
+def cassandra_wait(seconds, message="Waiting..."):
+    print(message, end=" ")
+    for remaining in range(seconds, -1, -1):
+        progress = (seconds - remaining) / seconds * 100
+        sys.stdout.write("\r[%-50s] %d%%" % ('=' * int(progress / 2), progress))
+        sys.stdout.flush()
+        time.sleep(1)
+    print("\nCassandra is ready now!")
 
 def main():
     parser = argparse.ArgumentParser(description="UCI Installation Script")
@@ -558,41 +489,37 @@ def main():
     # Ensure .bashrc exists and is writable
     os.system("touch ~/.bashrc")
 
-    # Stage 2: Exporting keys and environment variables
-    print_stage_message("Stage 2: Exporting keys and environment variables")
+    # Stage 1: Exporting keys and environment variables
+    print_stage_message("Stage 1: Exporting keys and environment variables")
 
     export_keys(args)
     
     get_system_ip()
 
-    # # Stage 3: Docker setup
-    print_stage_message("Stage 3: Docker setup")
+    # Stage 2: Docker setup
+    print_stage_message("Stage 2: Docker setup")
 
     check_and_install_docker()
     check_and_install_docker_compose()
 
-    # Stage 4: Cloning repositories
-    print_stage_message("Stage 4: Cloning repositories")
+    # Stage 3: Cloning repositories
+    print_stage_message("Stage 3: Cloning ODK")
 
     clone_odk_repository()
 
-    # Stage 6: Building and setting up UCI Admin
-    print_stage_message("Stage 6: Building and setting up UCI Admin")
-
-    build_and_setup_uci_admin()
-
-    # Stage 7: Running Docker Compose services
-    print_stage_message("Stage 7: Running Docker Compose services")
+    # Stage 4: Running Docker Compose services
+    print_stage_message("Stage 4: Running Docker Compose services")
 
     run_fusionauth_services()
     run_kafka_services()
     run_odk_services()
     run_docker_services()
+    
     # Additional steps after installation...
     
     execute_hasura_queries()
 
-    custom_sleep(60, "Let's give cassandra some time to be up and running")
+    cassandra_wait(60, "Let's give cassandra some time to be up and running")
 
     run_cassandra_queries("/docker-entrypoint-initdb.d/cassandra.cql")
 

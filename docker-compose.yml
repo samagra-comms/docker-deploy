@@ -230,6 +230,11 @@ services:
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
     restart: always
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./data/cd-data:/var/lib/cassandra
       - ./cassandra.yaml:/opt/cassandra/conf/cassandra.yaml
