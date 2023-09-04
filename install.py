@@ -398,6 +398,18 @@ def run_cassandra_queries(cql_file_path):
     ]
     
     subprocess.run(command)
+    
+def create_empty_topic(topic_name, broker_list="localhost:9092"):
+    
+    command = "docker-compose exec kafka sh -c 'echo "" | kafka-console-producer --broker-list localhost:9092 --topic com.odk.transformer'"
+    subprocess.run(command, shell=True, executable='/bin/sh')
+
+def restart_transformer():
+    command = [
+        "docker", "compose", "restart", "transformer"
+    ]
+    
+    subprocess.run(command)
 
 def execute_hasura_queries():
     
@@ -534,7 +546,12 @@ def main():
 
     bot_id = create_bot_with_curl(logic_id)
     print("Bot ID:", bot_id)     
+    
+    #create an empty kafka topic (transformer dependency)
+    create_empty_topic("localhost:9092", "com.odk.transformer")
 
+    #restart transformer
+    restart_transformer()
 
 if __name__ == "__main__":
     main()
