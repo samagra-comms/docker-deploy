@@ -176,7 +176,7 @@ services:
 
 # UCI Core
   inbound:
-    image: "samagragovernance/inbound:latest"
+    image: "samagragovernance/inbound:v2.2.13"
     restart: always
     env_file: .env
     ports:
@@ -311,7 +311,6 @@ services:
       discovery.type: single-node
       ES_JAVA_OPTS: ${ES_JAVA_OPTS}
     healthcheck:
-      test: [ "CMD", "curl",  "--fail" ,"--write-out", "'HTTP %{http_code}'", "--silent", "--output", "/dev/null", "http://localhost:9200/" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -327,10 +326,8 @@ services:
     image: fusionauth/fusionauth-app:latest
     restart: unless-stopped
     depends_on:
-      fa-db:
-        condition: service_healthy
-      fa-search:
-        condition: service_healthy
+      - fa-db
+      - fa-search
     environment:
       DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
       DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}

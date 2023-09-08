@@ -49,59 +49,6 @@ def print_error_message(error_message):
 def print_stage_message(stage_name):
     print(f"\n{green}=== {stage_name} ==={reset}")
 
-
-def run_command(command):
-    try:
-        cmd_str = " ".join(command)  # Join the list elements into a single string
-        print("command to be executed:", cmd_str)
-        subprocess.run(f"bash -i -c '{cmd_str}'", shell=True, check=True)
-    except subprocess.CalledProcessError as e:
-        print_error_message(str(e))
-        sys.exit(1)
-
-def install_node_version_manager():
-    print_stage_message("Installing Node Version Manager (NVM)")
-
-    # Remove if already installed
-    shutil.rmtree(os.path.expanduser("~/.nvm"), ignore_errors=True)
-
-    # Install NVM
-    command = f"curl -o- https://raw.githubusercontent.com/creationix/nvm/v{INSTALL_NVM_VER}/install.sh | bash"
-
-    try:
-        subprocess.run(command, shell=True, check=True)
-        print("Command executed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Command execution failed with error: {e}")    
-    # Make nvm command available to terminal
-    os.system("source ~/.nvm/nvm.sh")
-
-
-def install_nodejs():
-    print_stage_message("Installing Node.js")
-
-    # Install Node.js
-    run_command(["nvm", "install", INSTALL_NODE_VER])
-    # Make this version the system default
-    run_command(["nvm", "alias", "default", INSTALL_NODE_VER])
-    run_command(["nvm", "use", "default"])
-
-
-def install_yarn():
-    print_stage_message("Installing Yarn package manager")
-
-    # Install Yarn package manager
-    shutil.rmtree(os.path.expanduser("~/.yarn"), ignore_errors=True)
-    run_command(["curl", "-o-", "-L", f"https://yarnpkg.com/install.sh", "|", "bash", "-s", "--", "--version", INSTALL_YARN_VER])
-
-
-def add_yarn_to_path():
-    print_stage_message("Adding Yarn to environment path")
-
-    # Add Yarn to environment path
-    os.environ["PATH"] = f"$HOME/.yarn/bin:{os.environ['PATH']}"
-    run_command(["yarn", "config", "set", "prefix", "~/.yarn", "-g"])
-
 def export_keys(args):
     global ENCRYPTION_KEY, NETCORE_WHATSAPP_AUTH_TOKEN, NETCORE_WHATSAPP_SOURCE, NETCORE_WHATSAPP_URI
 
@@ -134,42 +81,6 @@ def export_keys(args):
             elif line.startswith('ENCRYPTION_KEY='):
                 line = f'ENCRYPTION_KEY={ENCRYPTION_KEY}\n'
             file.write(line)
-
-def check_and_install_docker():
-    print_stage_message("Checking and installing Docker")
-
-    # Check if Docker is already installed
-    if shutil.which("docker"):
-        print("Docker is already installed.")
-        print()
-        return
-
-    # Install Docker
-    print("Installing Docker...")
-    time.sleep(2)  # Simulating installation delay
-    # Uncomment the line below to install Docker non-interactively
-    # run_command(["DRY_RUN=1", "sh", "./get-docker.sh"])
-    print("Docker installation complete.")
-    print()
-
-
-def check_and_install_docker_compose():
-    print_stage_message("Checking and installing Docker Compose")
-
-    # Check if Docker Compose is already installed
-    if shutil.which("docker-compose"):
-        print("Docker Compose is already installed.")
-        print()
-        return
-
-    # Install Docker Compose
-    print("Installing Docker Compose...")
-    time.sleep(2)  # Simulating installation delay
-    run_command(["sudo", "curl", "-L", f"https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)", "-o", "/usr/local/bin/docker-compose"])
-    run_command(["sudo", "chmod", "+x", "/usr/local/bin/docker-compose"])
-    print("Docker Compose installation complete.")
-    print()
-
 
 def clone_odk_repository():
     print_stage_message("Cloning ODK repository")
@@ -321,10 +232,9 @@ def create_conversation_logic(admin_token, form_id):
 
 
 
-def create_bot_with_curl(conversation_logic_id):
-    url = 'http://143.110.255.220:9999/admin/bot'
+def create_bot_with_curl(conversation_logic_id, admin_token):
+    url = 'http://localhost:9999/admin/bot'
     asset = 'bot'
-    admin_token = 'dR67yAkMAqW5P9xk6DDJnfn6KbD4EJFVpmPEjuZMq44jJGcj65'
     owner_org_id = 'org01'
     owner_id = '8f7ee860-0163-4229-9d2a-01cef53145ba'
     bot_image_path = './media/Test-Bot-Flow-pwa.png'
@@ -505,22 +415,15 @@ def main():
     print_stage_message("Stage 1: Exporting keys and environment variables")
 
     export_keys(args)
-    
     get_system_ip()
 
-    # Stage 2: Docker setup
-    print_stage_message("Stage 2: Docker setup")
-
-    check_and_install_docker()
-    check_and_install_docker_compose()
-
     # Stage 3: Cloning repositories
-    print_stage_message("Stage 3: Cloning ODK")
+    print_stage_message("Stage 2: Cloning ODK")
 
     clone_odk_repository()
 
     # Stage 4: Running Docker Compose services
-    print_stage_message("Stage 4: Running Docker Compose services")
+    print_stage_message("Stage 3: Running Docker Compose services")
 
     run_fusionauth_services()
     run_kafka_services()
@@ -535,7 +438,7 @@ def main():
 
     run_cassandra_queries("/docker-entrypoint-initdb.d/cassandra.cql")
 
-    admin_token = "dR67yAkMAqW5P9xk6DDJnfn6KbD4EJFVpmPEjuZMq44jJGcj65"
+    admin_token = os.getenv("ADMIN_TOKEN")
     path_to_xml = "./media/odk.xml"
     upload_form(path_to_xml)       
     form_id = "UCI-Setup-Test-Form"
@@ -544,13 +447,12 @@ def main():
     logic_id = create_conversation_logic(admin_token, form_id)
     print(f"Logic ID: {logic_id}")
 
-    bot_id = create_bot_with_curl(logic_id)
+    bot_id = create_bot_with_curl(logic_id,admin_token)
     print("Bot ID:", bot_id)     
     
     #create an empty kafka topic (transformer dependency)
     create_empty_topic("localhost:9092", "com.odk.transformer")
 
-    #restart transformer
     restart_transformer()
 
 if __name__ == "__main__":
