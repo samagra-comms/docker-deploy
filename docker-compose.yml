@@ -56,7 +56,8 @@ services:
 
   uci-web-channel:
     restart: always
-    image: samagragovernance/uci-web-channel:latest
+    build:
+      context: ./uci-web-channel
     env_file: .env
     ports:
     - "9098:80"

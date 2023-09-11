@@ -99,6 +99,38 @@ def clone_odk_repository():
         print_error_message(f"Error while cloning ODK repository: {e}")
         sys.exit(1)
 
+def clone_uci_admin():
+    print_stage_message("Cloning Admin repository")
+
+    if os.path.exists("uci-admin"):
+        print("Admin repository already exists.")
+        print()
+        return
+
+    try:
+        git.Repo.clone_from("https://github.com/samagra-comms/uci-admin", "uci-admin")
+        print("Admin repository clone complete.")
+        print()
+    except git.exc.GitCommandError as e:
+        print_error_message(f"Error while cloning Admin repository: {e}")
+        sys.exit(1)
+        
+def clone_uci_web_channel():
+    print_stage_message("Cloning Web-channel")
+
+    if os.path.exists("uci-admin"):
+        print("Web-channel repository already exists.")
+        print()
+        return
+
+    try:
+        git.Repo.clone_from("https://github.com/samagra-comms/uci-web-channel", "uci-web-channel", branch="demo-NL")
+        print("Web-channel clone complete.")
+        print()
+    except git.exc.GitCommandError as e:
+        print_error_message(f"Error while cloning Web-channel: {e}")
+        sys.exit(1)
+
 
 def replace_env_variable(file_path, variable_name, variable_value):
     with open(file_path, "r") as file:
@@ -421,6 +453,7 @@ def main():
     print_stage_message("Stage 2: Cloning ODK")
 
     clone_odk_repository()
+    clone_uci_admin()
 
     # Stage 4: Running Docker Compose services
     print_stage_message("Stage 3: Running Docker Compose services")
