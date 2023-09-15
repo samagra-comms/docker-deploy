@@ -81,6 +81,37 @@ def export_keys(args):
             elif line.startswith('ENCRYPTION_KEY='):
                 line = f'ENCRYPTION_KEY={ENCRYPTION_KEY}\n'
             file.write(line)
+            
+def update_env_with_ip(env_file_path):
+    try:
+        system_ip = get_system_ip()
+        if system_ip:
+            # Define the lines to be updated with the system IP
+            lines_to_update = [
+                f'REACT_APP_TRANSPORT_SOCKET_URL="ws://{system_ip}:3005/"\n',
+                f'REACT_APP_UCI_BOT_BASE_URL="http://{system_ip}:3002"\n',
+                f'REACT_APP_CHAT_HISTORY_URL="http://{system_ip}:9080/"\n'
+            ]
+
+            # Read the .env file and update the specified lines
+            with open(env_file_path, 'r') as file:
+                env_lines = file.readlines()
+
+            with open(env_file_path, 'w') as file:
+                for line in env_lines:
+                    if line.startswith('REACT_APP_TRANSPORT_SOCKET_URL='):
+                        line = lines_to_update[0]
+                    elif line.startswith('REACT_APP_UCI_BOT_BASE_URL='):
+                        line = lines_to_update[1]
+                    elif line.startswith('REACT_APP_CHAT_HISTORY_URL='):
+                        line = lines_to_update[2]
+                    file.write(line)
+
+            print("Updated .env file with system IP:", system_ip)
+        else:
+            print("Failed to get the system IP address. .env file not updated.")
+    except Exception as e:
+        print("Error updating .env file:", str(e))
 
 def clone_odk_repository():
     print_stage_message("Cloning ODK repository")
@@ -447,6 +478,7 @@ def main():
     print_stage_message("Stage 1: Exporting keys and environment variables")
 
     export_keys(args)
+    update_env_with_ip(".env") 
     get_system_ip()
 
     # Stage 3: Cloning repositories
