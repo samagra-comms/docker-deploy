@@ -149,7 +149,7 @@ def clone_uci_admin():
 def clone_uci_web_channel():
     print_stage_message("Cloning Web-channel")
 
-    if os.path.exists("uci-admin"):
+    if os.path.exists("uci-web-channel"):
         print("Web-channel repository already exists.")
         print()
         return
@@ -486,6 +486,7 @@ def main():
 
     clone_odk_repository()
     clone_uci_admin()
+    clone_uci_web_channel()
 
     # Stage 4: Running Docker Compose services
     print_stage_message("Stage 3: Running Docker Compose services")
