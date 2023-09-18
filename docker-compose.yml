@@ -62,7 +62,7 @@ services:
       context: ./uci-web-channel
     env_file: .env
     ports:
-    - "9098:80"
+    - "9098:3000"
 
   uci-admin:
     restart: always
