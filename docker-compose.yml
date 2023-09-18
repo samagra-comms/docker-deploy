@@ -99,8 +99,6 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
-    # ports:
-    #   - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
@@ -119,8 +117,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_LOG_DIRS: ./data00/kafka-logs
-      # KAFKA_BROKER_ID: 1
-      # KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
@@ -400,9 +396,7 @@ services:
   akhq:
     image: tchiotludo/akhq
     ports:
-      # TODO: UNPROTECTED ADMIN LOGIN. DON'T EXPOSE THIS !!!!
       - "18080:8080"
-      # - "8080"
     environment:
       AKHQ_CONFIGURATION: |
         akhq:
