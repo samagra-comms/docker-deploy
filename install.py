@@ -89,7 +89,7 @@ def update_env_with_ip(env_file_path):
             # Define the lines to be updated with the system IP
             lines_to_update = [
                 f'REACT_APP_TRANSPORT_SOCKET_URL="ws://{system_ip}:3005/"\n',
-                f'REACT_APP_UCI_BOT_BASE_URL="http://{system_ip}:3002"\n',
+                f'REACT_APP_UCI_BOT_BASE_URL="http://{system_ip}:9999"\n',
                 f'REACT_APP_CHAT_HISTORY_URL="http://{system_ip}:9080/"\n'
             ]
 
