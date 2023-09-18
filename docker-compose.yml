@@ -43,12 +43,14 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
+
   uci-transport-socket:
-    image: samagragovernance/uci-transport-socket:v2.1.8
+    image: samagragovernance/uci-transport-socket:v2.1.11
+    env_file: .env
     restart: always
     environment:
-      REDIS_HOST: cache
-      REDIS_PORT: 6379
+      REDIS_HOST: ${TRANSPORT_SOCKET_CACHE_HOST}
+      REDIS_PORT: ${TRANSPORT_SOCKET_CACHE_PORT}
       SERVER_PORT: 3005
       ADAPTER_URL: "http://inbound:8085/pwa/web"
     ports:
