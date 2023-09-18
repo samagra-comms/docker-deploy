@@ -1,0 +1,10 @@
+blinker==1.4
+command-not-found==0.3
+entrypoints==0.3
+pexpect==4.6.0
+pyasn1-modules==0.2.1
+PyICU==2.4.2
+PyYAML==5.3.1
+simplejson==3.16.0
+systemd-python==234
+ufw==0.36

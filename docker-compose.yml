@@ -3,14 +3,11 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    build: 
-      context: ./uci-apis/v2/uci
-    image: federation-service
+    image: samagragovernance/uci-apis:demo-UCI
     restart: always
     env_file: .env
-
     ports:
-      - 9999:9999
+      - 9999:3002
   
   uci-api-db:
     image: postgres:12
@@ -22,9 +19,10 @@ services:
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
 
   uci-api-db-gql:
-    image: hasura/graphql-engine:v2.0.0-alpha.1
+    image: hasura/graphql-engine:latest
     restart: always
     env_file: .env
     ports:
@@ -45,34 +43,31 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
 
 # UCI PWA Adapter
+
   uci-transport-socket:
-    image: samagragovernance/uci-transport-socket:655da87
+    image: samagragovernance/uci-transport-socket:v2.1.11
+    env_file: .env
     restart: always
     environment:
-      REDIS_HOST: cache
-      REDIS_PORT: 6379
+      REDIS_HOST: ${TRANSPORT_SOCKET_CACHE_HOST}
+      REDIS_PORT: ${TRANSPORT_SOCKET_CACHE_PORT}
       SERVER_PORT: 3005
       ADAPTER_URL: "http://inbound:8085/pwa/web"
     ports:
       - 3005:3005
 
-  # TODO: Needs to be fixed for general purpose use
   uci-web-channel:
     restart: always
-    image: nginx
-    volumes:
-    - ./nginx.conf:/etc/nginx/nginx.conf
-    - ./uci-web-channel.conf:/etc/nginx/sites-enabled/default
-    - ./uci-web-channel/build:/usr/site
-    # environment:
-    #   REACT_APP_TRANSPORT_SOCKET_URL: "ws://localhost:3005"
+    build:
+      context: ./uci-web-channel
+    env_file: .env
     ports:
-    - "9098:80"
+    - "9098:3000"
 
   uci-admin:
     restart: always
     build: 
-      context: uci-admin
+      context: ./uci-admin/
       args:
         NG_APP_url: ${NG_APP_url}
         NG_APP_nl_url: ${NG_APP_nl_url}
@@ -104,8 +99,6 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
-    # ports:
-    #   - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
@@ -124,8 +117,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_LOG_DIRS: ./data00/kafka-logs
-      # KAFKA_BROKER_ID: 1
-      # KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
@@ -184,35 +175,35 @@ services:
 
 # UCI Core
   inbound:
-    image: "samagragovernance/inbound:${CURRENT_VERSION}"
+    image: "samagragovernance/inbound:v2.2.13"
     restart: always
     env_file: .env
     ports:
       - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
 
   orchestrator:
-    image: "samagragovernance/orchestrator:${CURRENT_VERSION}"
+    image: "samagragovernance/orchestrator:latest"
     restart: always
     env_file: .env
     ports:
       - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
 
   transformer:
-    image: "samagragovernance/transformer:${CURRENT_VERSION}"
+    image: "samagragovernance/transformer:latest"
     restart: always
     env_file: .env
     ports:
       - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
 
   outbound:
-    image: "samagragovernance/outbound:${CURRENT_VERSION}"
+    image: "samagragovernance/outbound:latest"
     restart: always
     env_file: .env
     ports:
       - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
 
   broadcast-transformer:
-    image: "samagragovernance/broadcast-transformer:${CURRENT_VERSION}"
+    image: "samagragovernance/broadcast-transformer:v2.2.12-SNAPSHOT"
     restart: always
     env_file: .env
     ports:
@@ -224,32 +215,29 @@ services:
     env_file: .env-cdac
 
   cass:
-    image: bitnami/cassandra:latest
-    restart: always
+    image: cassandra:latest
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 7199:7199
+      - 9041:9042
+      - 9160:9160
     environment:
-      - MAX_HEAP_SIZE=1000M
-      - HEAP_NEWSIZE=1000M
+      - JVM_OPTS=-Xmx8G -Xms1G -Xss512k
+      - MAX_HEAP_SIZE=8092M
+      - HEAP_NEWSIZE=8092M
       - CASSANDRA_RPC_ADDRESS=0.0.0.0
-      - CASSANDRA_SEEDS=cass
-      - CASSANDRA_PASSWORD_SEEDER=yes      
-      - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-      - CASSANDRA_HOST=cass
+    restart: always
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./data/cd-data:/var/lib/cassandra
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "cqlsh",
-          "-u cassandra",
-          "-p cassandra",
-          "-e describe keyspaces",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-  
+      - ./cassandra.yaml:/opt/cassandra/conf/cassandra.yaml
+      - ./init-scripts/cassandra.cql:/docker-entrypoint-initdb.d/cassandra.cql
   formsdb:
     restart: always
     image: postgres:9.6
@@ -308,50 +296,58 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
+      - ./odk-aggregate/webapps:/usr/local/tomcat/webapps
 
 # Fusion Auth
 
   fa-search:
-    restart: always
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    env_file:
+      - .env
     environment:
-      - cluster.name=fusionauth
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
-      - discovery.type=single-node
-    # ulimits: # Don't work with Gitpod
-    #   memlock:
-    #     soft: -1
-    #     hard: -1
+      cluster.name: fusionauth
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
-      - ./data/fa-es-data:/usr/share/elasticsearch/data
+      - fa-es-data:/usr/share/elasticsearch/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - fa-search
       - fa-db
+      - fa-search
     environment:
       DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
       DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
       DATABASE_ROOT_PASSWORD: ${FUSIONAUTH_POSTGRES_PASSWORD}
       DATABASE_USERNAME: ${FUSIONAUTH_DATABASE_USER}
       DATABASE_PASSWORD: ${FUSIONAUTH_DATABASE_USERNAME}
-      FUSIONAUTH_SEARCH_ENGINE_TYPE: elasticsearch
-      FUSIONAUTH_SEARCH_SERVERS: http://fa-search:9200
-      FUSIONAUTH_URL: http://fusionauth:9011
       FUSIONAUTH_API_KEY: ${FUSIONAUTH_API_KEY}
-      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
       FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
       FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
       FUSIONAUTH_APPLICATION_ID: ${FUSIONAUTH_APPLICATION_ID}
       FUSIONAUTH_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
+      FUSIONAUTH_APP_MEMORY: ${FUSIONAUTH_APP_MEMORY}
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_URL: http://fusionauth:9011
+      SEARCH_SERVERS: http://fa-search:9200
+      SEARCH_TYPE: elasticsearch
+      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
     ports:
       - 9011:9011
     volumes:
-      - ./fa-config:/usr/local/fusionauth/config
+      - fa-config:/usr/local/fusionauth/config
       - ./kickstart:/usr/local/fusionauth/kickstart
 
   fa-db:
@@ -362,6 +358,11 @@ services:
       - POSTGRES_PASSWORD=${FUSIONAUTH_POSTGRES_PASSWORD}
     volumes:
       - ./data/pgdata-fa-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   
   vault:
     image: vault:1.10.3
@@ -391,3 +392,35 @@ services:
       MINIO_IDENTITY_OPENID_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
     depends_on:
       - fusionauth
+
+  akhq:
+    image: tchiotludo/akhq
+    ports:
+      - "18080:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          clients-defaults:
+            consumer:
+              properties:
+                default.api.timeout.ms: 15000000
+          security:
+            basic-auth:
+              - username: ${AKHQ_USERNAME}
+                password: ${AKHQ_PASSWORD}
+                groups: 
+                  - admin
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:19092"
+              schema-registry:
+                url: "http://schema-registry:8085"
+              connect:
+                - name: "connect"
+                  url: "http://connect:8083"
+    restart: unless-stopped
+
+volumes:
+  fa-config:
+  fa-es-data:
