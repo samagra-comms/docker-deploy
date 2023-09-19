@@ -182,7 +182,7 @@ def run_fusionauth_services():
         for service in services_to_start:
             print(f"Starting '{service}' service...")
             subprocess.run(["docker-compose", "up", "-d", service], check=True)
-
+            get_status(service)
         print("All services are up")
         print()
 
@@ -199,7 +199,24 @@ def run_odk_services():
         for service in services_to_start:
             print(f"Starting '{service}' service...")
             subprocess.run(["docker-compose", "up", "-d", service], check=True)
+            get_status(service)
+        print("All services are up")
+        print()
 
+    except subprocess.CalledProcessError as e:
+        print_error_message(f"Error while running Docker Compose services: {e}")
+        sys.exit(1)
+        
+def run_transaction_layer_services():
+    print_stage_message("Setting up transaction layer. This may take a few minutes.")
+
+    try:
+        services_to_start = ["transformer","broadcast-transformer","orchestrator","inbound","outbound"]
+
+        for service in services_to_start:
+            print(f"Starting '{service}' service...")
+            subprocess.run(["docker-compose", "up", "-d", service], check=True)
+            get_status(service)
         print("All services are up")
         print()
 
@@ -229,7 +246,7 @@ def run_kafka_services():
         for service in services_to_start:
             print(f"Starting '{service}' service...")
             subprocess.run(["docker-compose", "up", "-d", service], check=True)
-
+            get_status(service)
         print("All services are up")
         print()
 
@@ -494,13 +511,14 @@ def main():
     run_fusionauth_services()
     run_kafka_services()
     run_odk_services()
+    run_transaction_layer_services()
     run_docker_services()
     
     # Additional steps after installation...
     
     execute_hasura_queries()
 
-    cassandra_wait(60, "Let's give cassandra some time to be up and running")
+    cassandra_wait(120, "Let's give cassandra some time to be up and running")
 
     run_cassandra_queries("/docker-entrypoint-initdb.d/cassandra.cql")
 
