@@ -19,7 +19,6 @@ services:
       - POSTGRES_DB=${UCI_API_POSTGRES_DB}
     volumes:
       - ./data/pgdata-uci-api-db:/var/lib/postgresql/data
-      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
 
   uci-api-db-gql:
     image: hasura/graphql-engine:latest

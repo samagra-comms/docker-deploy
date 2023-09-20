@@ -307,7 +307,7 @@ def create_bot_with_curl(conversation_logic_id, admin_token):
     asset = 'bot'
     owner_org_id = 'org01'
     owner_id = '8f7ee860-0163-4229-9d2a-01cef53145ba'
-    bot_image_path = './media/Test-Bot-Flow-pwa.png'
+    bot_image_path = './media/bot_image.png'
 
     # JSON data containing the conversation_logic_id
     data = {
@@ -515,7 +515,7 @@ def main():
     admin_token = os.getenv("ADMIN_TOKEN")
     path_to_xml = "./media/odk.xml"
     upload_form()       
-    form_id = "UCI-Setup-Test-Form"
+    form_id = "demo"
     print(f"Form ID: {form_id}")
 
     logic_id = create_conversation_logic(admin_token, form_id)
