@@ -121,7 +121,6 @@ def clone_odk_repository():
         print()
         return
 
-    # Clone the ODK repository using GitPython
     try:
         git.Repo.clone_from("https://github.com/samagra-comms/odk.git", "odk-aggregate")
         print("ODK repository clone complete.")
@@ -161,17 +160,6 @@ def clone_uci_web_channel():
     except git.exc.GitCommandError as e:
         print_error_message(f"Error while cloning Web-channel: {e}")
         sys.exit(1)
-
-
-def replace_env_variable(file_path, variable_name, variable_value):
-    with open(file_path, "r") as file:
-        lines = file.readlines()
-
-    with open(file_path, "w") as file:
-        for line in lines:
-            if line.startswith(f"{variable_name}="):
-                line = f"{variable_name}={variable_value}\n"
-            file.write(line)
 
 def run_fusionauth_services():
     print_stage_message("Building ElasticSearch and FusionAuth containers. This may take a few minutes.")
@@ -254,22 +242,24 @@ def run_kafka_services():
         print_error_message(f"Error while running Docker Compose services: {e}")
         sys.exit(1)
     
-def upload_form(path_to_xml):
-    print_stage_message("Uploading form")
-
+def upload_form():
     url = "http://localhost:8080/formUpload"
-    files = {
-        "form_def_file": (path_to_xml.split("/")[-1], open(path_to_xml, "rb"))
-    }
+
+    payload = {}
+    files=[
+    ('form_def_file',('testform.xml',open('media/testform.xml','rb'),'text/xml')),
+    ('media_file1',('image.jpg',open('media/image.jpg','rb'),'image/jpeg')),
+    ('media_file2',('video.mp4',open('media/video.mp4','rb'),'application/octet-stream'))
+    ]
+    headers = {}
 
     try:
-        response = requests.post(url, files=files)
+        response = requests.request("POST", url, headers=headers, data=payload, files=files)
         response.raise_for_status()
         print("Form upload successful.")
     except requests.exceptions.RequestException as e:
         print_error_message(f"Error while uploading form: {e}")
         sys.exit(1)
-
 
 def create_conversation_logic(admin_token, form_id):
     print_stage_message("Creating conversation logic")
@@ -283,8 +273,8 @@ def create_conversation_logic(admin_token, form_id):
     data = {
         "data": {
             "id": None,
-            "name": "UCI List & Button Logic",
-            "description": "UCI List & Button Logic Desc",
+            "name": "UCI Demo Setup",
+            "description": "This is a sample conversation logic created with the inital setup of UCI on your system.",
             "transformers": [
                 {
                     "id": "bbf56981-b8c9-40e9-8067-468c2c753659",
@@ -524,7 +514,7 @@ def main():
 
     admin_token = os.getenv("ADMIN_TOKEN")
     path_to_xml = "./media/odk.xml"
-    upload_form(path_to_xml)       
+    upload_form()       
     form_id = "UCI-Setup-Test-Form"
     print(f"Form ID: {form_id}")
 
