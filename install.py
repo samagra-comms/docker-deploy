@@ -379,6 +379,8 @@ def run_cassandra_queries(cql_file_path):
     
     subprocess.run(command)
     
+    print("\nCassandra is ready now!")
+    
 def create_empty_topic(topic_name, broker_list="localhost:9092"):
     
     command = "docker-compose exec kafka sh -c 'echo "" | kafka-console-producer --broker-list localhost:9092 --topic com.odk.transformer'"
@@ -462,7 +464,27 @@ def cassandra_wait(seconds, message="Waiting..."):
         sys.stdout.write("\r[%-50s] %d%%" % ('=' * int(progress / 2), progress))
         sys.stdout.flush()
         time.sleep(1)
-    print("\nCassandra is ready now!")
+        
+    
+def curl_with_retry_sequential(urls, max_retries=30, retry_interval=10, max_wait_time=300,start_time = time.time()):
+    for url in urls:
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    print(f"Service at {url} is UP!")
+                    break 
+            except Exception as e:
+                print(f"Container at {url} didn't respond. It is still initializing. Will retry in 10 seconds.")
+            
+            time.sleep(retry_interval)
+        else:
+            print(f"Service at {url} is DOWN.")
+        
+        elapsed_time = time.time() - start_time
+        if elapsed_time > max_wait_time:
+            print("\nTimeout reached (5 minutes).")
+            break
 
 def main():
     parser = argparse.ArgumentParser(description="UCI Installation Script")
@@ -471,6 +493,14 @@ def main():
     parser.add_argument("--netcore_whatsapp_source", help="Netcore Whatsapp Source",required=False)
     parser.add_argument("--netcore_whatsapp_uri", help="Netcore Whatsapp URI",required=False)
     args = parser.parse_args()
+
+    # Checking Posthog API Key
+    
+    api_key = os.getenv('POSTHOG_API_KEY')
+    
+    if api_key == "":
+        print(f"Environment variable POSTHOG_API_KEY is not set. Please set it in your .env")
+        sys.exit(1)
 
     # Print welcome message
     print("\n\n\n****************************************************")
@@ -507,6 +537,16 @@ def main():
     # Additional steps after installation...
     
     execute_hasura_queries()
+
+    urls_to_curl = [
+        "http://localhost:9080/health",
+        "http://localhost:9090/health",
+        "http://localhost:8686/health",
+        "http://localhost:9091/health",
+        "http://localhost:9093/health",
+    ]
+    
+    curl_with_retry_sequential(urls_to_curl)
 
     cassandra_wait(120, "Let's give cassandra some time to be up and running")
 
