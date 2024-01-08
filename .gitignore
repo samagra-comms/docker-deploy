@@ -25,3 +25,4 @@
 !install.py
 !cassandra.yaml
 !requirements.txt
+!docker-compose-stateless.yml

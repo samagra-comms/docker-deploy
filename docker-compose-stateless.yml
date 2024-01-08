@@ -1,0 +1,236 @@
+version: "3"
+
+services:
+# UCI API
+  uci-api-service:
+    image: samagragovernance/uci-apis:demo-UCI
+    restart: always
+    env_file: .env
+    ports:
+      - 9999:3002
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  uci-api-db-gql:
+    image: hasura/graphql-engine:latest
+    restart: always
+    env_file: .env
+    ports:
+      - "15003:8080"
+    environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET}
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  uci-transport-socket:
+    image: samagragovernance/uci-transport-socket:v2.1.11
+    env_file: .env
+    restart: always
+    environment:
+      REDIS_HOST: ${TRANSPORT_SOCKET_CACHE_HOST}
+      REDIS_PORT: ${TRANSPORT_SOCKET_CACHE_PORT}
+      SERVER_PORT: 3005
+      ADAPTER_URL: "http://inbound:8085/pwa/web"
+    ports:
+      - 3005:3005
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  uci-web-channel:
+    restart: always
+    build:
+      context: ./uci-web-channel
+    env_file: .env
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    restart: always
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry
+    restart: always
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:9092'
+      SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8085'
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: 'INFO'
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  connect:
+    image: confluentinc/cp-kafka-connect
+    restart: always
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:9092'
+      CONNECT_REST_PORT: '8083'
+      CONNECT_REST_LISTENERS: 'http://0.0.0.0:8083'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'connect'
+      CONNECT_CONFIG_STORAGE_TOPIC: '__connect-config'
+      CONNECT_OFFSET_STORAGE_TOPIC: '__connect-offsets'
+      CONNECT_STATUS_STORAGE_TOPIC: '__connect-status'
+      CONNECT_GROUP_ID: 'kafka-connect'
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: 'true'
+      CONNECT_KEY_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8085'
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: 'true'
+      CONNECT_VALUE_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8085'
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: ' /usr/share/java/'
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+# UCI Core
+  inbound:
+    image: "samagragovernance/inbound:v2.2.13"
+    restart: always
+    env_file: .env
+    ports:
+      - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  orchestrator:
+    image: "samagragovernance/orchestrator:latest"
+    restart: always
+    env_file: .env
+    ports:
+      - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  transformer:
+    image: "samagragovernance/transformer:latest"
+    restart: always
+    env_file: .env
+    ports:
+      - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  outbound:
+    image: "samagragovernance/outbound:latest"
+    restart: always
+    env_file: .env
+    ports:
+      - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
+
+  broadcast-transformer:
+    image: "samagragovernance/broadcast-transformer:v2.2.12-SNAPSHOT"
+    restart: always
+    env_file: .env
+    ports:
+      - "${BROADCAST_TRANSFORMER_INTERNAL_PORT}:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  cdac:
+    image: samagragovernance/cdac-service:4.10.3
+    restart: always
+    env_file: .env-cdac
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  graphql-formsdb:
+    restart: always
+    image: hasura/graphql-engine:latest
+    ports:
+      - "15002:8080"
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:yoursupersecret@formsdb:5432/formsdb
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: ${FORMSDB_HASURA_GRAPHQL_ADMIN_SECRET}
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  aggregate-server:
+    restart: always
+    image: tomcat:alpine
+    environment:
+      - DB_USERNAME=${ODK_POSTGRES_USER}
+      - DB_SCHEMA=public
+      - DB_PASSWORD=${ODK_POSTGRES_PASSWORD}
+      - DB_NAME=${ODK_POSTGRES_DB}
+      - DB_PORT=5432
+      - AGGREGATE_HOST=
+      - DB_URL=jdbc:postgresql://aggregate-db:5432/${ODK_POSTGRES_DB}?user=${ODK_POSTGRES_USER}&password=${ODK_POSTGRES_PASSWORD}
+    ports:
+      - 8080:8080
+    volumes:
+      - ./odk-aggregate/webapps:/usr/local/tomcat/webapps
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  fusionauth:
+    image: fusionauth/fusionauth-app:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
+      DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
+      DATABASE_ROOT_PASSWORD: ${FUSIONAUTH_POSTGRES_PASSWORD}
+      DATABASE_USERNAME: ${FUSIONAUTH_DATABASE_USER}
+      DATABASE_PASSWORD: ${FUSIONAUTH_DATABASE_USERNAME}
+      FUSIONAUTH_API_KEY: ${FUSIONAUTH_API_KEY}
+      FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
+      FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
+      FUSIONAUTH_APPLICATION_ID: ${FUSIONAUTH_APPLICATION_ID}
+      FUSIONAUTH_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
+      FUSIONAUTH_APP_MEMORY: ${FUSIONAUTH_APP_MEMORY}
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_URL: http://fusionauth:9011
+      SEARCH_SERVERS: http://fa-search:9200
+      SEARCH_TYPE: elasticsearch
+      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
+    ports:
+      - 9011:9011
+    volumes:
+      - fa-config:/usr/local/fusionauth/config
+      - ./kickstart:/usr/local/fusionauth/kickstart
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+  akhq:
+    image: tchiotludo/akhq
+    ports:
+      - "18080:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          clients-defaults:
+            consumer:
+              properties:
+                default.api.timeout.ms: 15000000
+          security:
+            basic-auth:
+              - username: ${AKHQ_USERNAME}
+                password: ${AKHQ_PASSWORD}
+                groups: 
+                  - admin
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:19092"
+              schema-registry:
+                url: "http://schema-registry:8085"
+              connect:
+                - name: "connect"
+                  url: "http://connect:8083"
+    restart: unless-stopped
+    mem_limit: ${MEM_LIMIT}
+    cpu_quota: ${CPU_QUOTA}
+
+volumes:
+  fa-config:
