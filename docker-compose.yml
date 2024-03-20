@@ -3,11 +3,24 @@ version: "3"
 services:
 # UCI API
   uci-api-service:
-    image: samagragovernance/uci-apis:demo-UCI
-    restart: always
+    image: "samagragovernance/uci-apis:v2.4.3"
     env_file: .env
     ports:
       - 9999:3002
+    restart: always
+    depends_on:
+      aggregate-server:
+        condition: service_started
+      fusionauth:
+        condition: service_healthy
+      uci-api-scheduler-db:
+        condition: service_started
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:3002/admin/health/ping --header 'admin-token: ${ADMIN_TOKEN}' || exit 1" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
   
   uci-api-db:
     image: postgres:12
@@ -23,38 +36,43 @@ services:
 
   uci-api-db-gql:
     image: hasura/graphql-engine:latest
-    restart: always
-    env_file: .env
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:${UCI_API_POSTGRES_PASSWORD}@${POSTGRES_HOST}:${UCI_API_DB_PORT}/${UCI_API_POSTGRES_DB}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: ${UCI_API_DB_GRAPHQL_SECRET}
     ports:
       - "15003:8080"
-    depends_on:
-      - uci-api-db
-    environment:
-      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET}
+    restart: always
 
   uci-api-scheduler-db:
-    image: redis:latest
-    env_file: .env
-    restart: always
+    image: redis:6.2-alpine
     command: ["redis-server", "--appendonly", "yes"]
-    hostname: redis
-    volumes:
-      - ./data/uci-api-scheduler-db:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
 
 # UCI PWA Adapter
 
   uci-transport-socket:
     image: samagragovernance/uci-transport-socket:v2.1.11
     env_file: .env
-    restart: always
     environment:
       REDIS_HOST: ${TRANSPORT_SOCKET_CACHE_HOST}
       REDIS_PORT: ${TRANSPORT_SOCKET_CACHE_PORT}
+      CACHE_STORE: ${CACHE_STORE}
       SERVER_PORT: 3005
       ADAPTER_URL: "http://inbound:8085/pwa/web"
     ports:
       - 3005:3005
+    depends_on:
+      outbound:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:3005/health || exit 1" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
 
   uci-web-channel:
     restart: always
@@ -98,41 +116,27 @@ services:
 # Kafka
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.2
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_SERVERS: zookeeper:2888:3888
-    restart: always
+    image: zookeeper:3.9
+    restart: on-failure
 
   kafka:
-    image: confluentinc/cp-kafka:7.3.2
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-      - "9998:9999"
+    image: bitnami/kafka:2.8.1-debian-10-r99
+    restart: on-failure
     environment:
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_LOG_DIRS: ./data00/kafka-logs
-      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
-      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
-      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_JMX_PORT: 9999
-      KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
-      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
-      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+        KAFKA_BROKER_ID: 1001
+        KAFKA_CFG_RESERVED_BROKER_MAX_ID: 1001
+        KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+        KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+        KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+        ALLOW_PLAINTEXT_LISTENER: 'true'
     depends_on:
-      - zookeeper
-    volumes:
-      - ./data/kafka-data-1:/kafka
-      - ./data/kafka-data-2:/var/lib/kafka:Z
-    restart: always
+      zookeeper:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   schema-registry:
     image: confluentinc/cp-schema-registry
@@ -175,39 +179,94 @@ services:
 
 # UCI Core
   inbound:
-    image: "samagragovernance/inbound:v2.2.13"
-    restart: always
+    image: "samagragovernance/inbound:${CURRENT_VERSION}"
     env_file: .env
     ports:
       - "0.0.0.0:${INBOUND_EXTERNAL_PORT}:${INBOUND_INTERNAL_PORT}"
+    restart: always
+    depends_on:
+      uci-api-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      uci-api-scheduler-db:
+        condition: service_started
+      fusionauth:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:${INBOUND_INTERNAL_PORT}/health || exit 1" ]
+      interval: 8s
+      timeout: 5s
+      retries: 5
 
   orchestrator:
-    image: "samagragovernance/orchestrator:latest"
-    restart: always
+    image: "samagragovernance/orchestrator:${CURRENT_VERSION}"
     env_file: .env
     ports:
       - "${ORCHESTRATOR_INTERNAL_PORT}:${ORCHESTRATOR_INTERNAL_PORT}"
+    restart: always
+    depends_on:
+      inbound:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:${ORCHESTRATOR_INTERNAL_PORT}/health || exit 1" ]
+      interval: 8s
+      timeout: 5s
+      retries: 5
 
   transformer:
-    image: "samagragovernance/transformer:latest"
-    restart: always
+    image: "samagragovernance/transformer:${CURRENT_VERSION}"
     env_file: .env
     ports:
       - "${TRANSFORMER_INTERNAL_PORT}:${TRANSFORMER_INTERNAL_PORT}"
+    restart: always
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+      aggregate-server:
+        condition: service_started
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:${TRANSFORMER_INTERNAL_PORT}/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
 
   outbound:
-    image: "samagragovernance/outbound:latest"
-    restart: always
+    image: "samagragovernance/outbound:${CURRENT_VERSION}"
     env_file: .env
     ports:
       - "${OUTBOUND_INTERNAL_PORT}:${OUTBOUND_INTERNAL_PORT}"
+    restart: always
+    depends_on:
+      transformer:
+        condition: service_healthy
+      broadcast-transformer:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:${OUTBOUND_INTERNAL_PORT}/health || exit 1" ]
+      interval: 8s
+      timeout: 5s
+      retries: 5
 
   broadcast-transformer:
-    image: "samagragovernance/broadcast-transformer:v2.2.12-SNAPSHOT"
-    restart: always
+    image: "samagragovernance/broadcast-transformer:${CURRENT_VERSION}"
     env_file: .env
     ports:
       - "${BROADCAST_TRANSFORMER_INTERNAL_PORT}:${BROADCAST_TRANSFORMER_INTERNAL_PORT}"
+    restart: always
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [ "CMD-SHELL", "curl -f http://localhost:${BROADCAST_TRANSFORMER_INTERNAL_PORT}/health || exit 1" ]
+      interval: 8s
+      timeout: 5s
+      retries: 5
 
   cdac:
     image: samagragovernance/cdac-service:4.10.3
@@ -249,17 +308,15 @@ services:
       - ./data/formsdb-data:/var/lib/postgresql/data
 
   graphql-formsdb:
-    restart: always
     image: hasura/graphql-engine:latest
     ports:
       - "15002:8080"
-    depends_on:
-      - formsdb
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:yoursupersecret@formsdb:5432/formsdb
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgresql:${FORMS_DB_PASSWORD}@${FORMS_DB_HOST}:${FORMS_DB_PORT}/formsdb
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ADMIN_SECRET: ${FORMSDB_HASURA_GRAPHQL_ADMIN_SECRET}
+      HASURA_GRAPHQL_ADMIN_SECRET: ${FORMS_DB_GRAPHQL_SECRET}
+    restart: always
 
 # ODK      
   aggregate-db:
@@ -281,9 +338,6 @@ services:
     command: aggregate-db:5432
 
   aggregate-server:
-    restart: always
-    depends_on:
-      - wait_for_db
     image: tomcat:alpine
     environment:
       - DB_USERNAME=${ODK_POSTGRES_USER}
@@ -292,11 +346,12 @@ services:
       - DB_NAME=${ODK_POSTGRES_DB}
       - DB_PORT=5432
       - AGGREGATE_HOST=
-      - DB_URL=jdbc:postgresql://aggregate-db:5432/${ODK_POSTGRES_DB}?user=${ODK_POSTGRES_USER}&password=${ODK_POSTGRES_PASSWORD}
+      - DB_URL=jdbc:postgresql://${ODK_POSTGRES_HOST}/${ODK_POSTGRES_DB}?user=${ODK_POSTGRES_USER}&password=${ODK_POSTGRES_PASSWORD}
     ports:
-      - 8080:8080
+      - 127.0.0.1:8081:8080
     volumes:
-      - ./odk-aggregate/webapps:/usr/local/tomcat/webapps
+      - ./odk-aggregate/odk/webapps:/usr/local/tomcat/webapps
+    restart: always
 
 # Fusion Auth
 
@@ -323,32 +378,29 @@ services:
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
-    restart: unless-stopped
-    depends_on:
-      - fa-db
-      - fa-search
     environment:
-      DATABASE_URL: jdbc:postgresql://fa-db:${FUSIONAUTH_POSTGRES_PORT}/fusionauth
+      DATABASE_URL: jdbc:postgresql://${FUSIONAUTH_DB_URL}/fusionauth
       DATABASE_ROOT_USERNAME: ${FUSIONAUTH_POSTGRES_USER}
       DATABASE_ROOT_PASSWORD: ${FUSIONAUTH_POSTGRES_PASSWORD}
-      DATABASE_USERNAME: ${FUSIONAUTH_DATABASE_USER}
-      DATABASE_PASSWORD: ${FUSIONAUTH_DATABASE_USERNAME}
+      DATABASE_USERNAME: ${FUSIONAUTH_DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${FUSIONAUTH_DATABASE_PASSWORD}
+      FUSIONAUTH_SEARCH_ENGINE_TYPE: elasticsearch
+      FUSIONAUTH_SEARCH_SERVERS: http://elastic:${ELASTIC_PASSWORD}@${ES_HOST}
+      FUSIONAUTH_URL: http://fusionauth:9011
       FUSIONAUTH_API_KEY: ${FUSIONAUTH_API_KEY}
+      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
       FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
       FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
-      FUSIONAUTH_APPLICATION_ID: ${FUSIONAUTH_APPLICATION_ID}
-      FUSIONAUTH_CLIENT_SECRET: ${FUSIONAUTH_CLIENT_SECRET}
-      FUSIONAUTH_APP_MEMORY: ${FUSIONAUTH_APP_MEMORY}
-      FUSIONAUTH_APP_RUNTIME_MODE: development
-      FUSIONAUTH_APP_URL: http://fusionauth:9011
-      SEARCH_SERVERS: http://fa-search:9200
-      SEARCH_TYPE: elasticsearch
-      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
     ports:
-      - 9011:9011
+      - 127.0.0.1:9023:9011
     volumes:
-      - fa-config:/usr/local/fusionauth/config
       - ./kickstart:/usr/local/fusionauth/kickstart
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9011/"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    restart: always
 
   fa-db:
     image: postgres:12
@@ -396,31 +448,36 @@ services:
   akhq:
     image: tchiotludo/akhq
     ports:
-      - "18080:8080"
+      - "127.0.0.1:18080:8080"
     environment:
       AKHQ_CONFIGURATION: |
         akhq:
           clients-defaults:
             consumer:
               properties:
-                default.api.timeout.ms: 15000000
+                default.api.timeout.ms: 15000
           security:
             basic-auth:
-              - username: ${AKHQ_USERNAME}
-                password: ${AKHQ_PASSWORD}
+              - username: admin
+                password: admin
                 groups: 
                   - admin
           connections:
             docker-kafka-server:
               properties:
-                bootstrap.servers: "kafka:19092"
-              schema-registry:
-                url: "http://schema-registry:8085"
-              connect:
-                - name: "connect"
-                  url: "http://connect:8083"
-    restart: unless-stopped
+                bootstrap.servers: "kafka:9092"
+    restart: always
+    cpus: "1"
+    mem_limit: "1gb"
+
+  templater:
+    image: samagragovernance/templater:latest
+    env_file: .env
+    ports:
+      - '0.0.0.0:${TEMPLATER_PORT}:3000'
+    restart: always
+    environment:
+      DATABASE_URL: ${TEMPLATER_DATABASE_URL}
 
 volumes:
-  fa-config:
   fa-es-data:
